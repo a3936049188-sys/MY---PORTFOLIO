@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="자산관리">
-    <title>자산 관리 v3.6</title>
+    <title>자산 관리 v3.7</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
@@ -23,16 +23,18 @@
         .segment-btn { flex: 1; text-align: center; padding: 8px 0; font-size: 14px; font-weight: 600; color: var(--text-sub); border-radius: 6px; cursor: pointer; }
         .segment-btn.active { background-color: #FFFFFF; color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-        /* 동기화 알림 토스트 (화면 상단) */
+        /* 동기화 알림 토스트 */
         #syncToast { display: none; position: fixed; top: env(safe-area-inset-top, 20px); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: bold; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: 0.3s; white-space: nowrap; }
 
-        /* 1억 목표 (글자 차오르는 효과) */
+        /* 목표 차오르는 효과 영역 */
         .chart-container { position: relative; height: 220px; display: flex; align-items: center; justify-content: center; }
-        .goal-container { display: none; flex-direction: column; align-items: center; justify-content: center; height: 220px; }
-        .goal-wrapper { position: relative; width: 160px; height: 90px; margin: 0 auto; }
-        .goal-text-bg { position: absolute; width: 100%; height: 100%; font-size: 80px; font-weight: 900; color: #E5E5EA; line-height: 90px; text-align: center; margin: 0; letter-spacing: -3px; }
+        .goal-container { display: none; flex-direction: column; align-items: center; justify-content: center; height: 220px; position: relative; }
+        
+        /* 글자 길이에 맞춰 너비 확장 */
+        .goal-wrapper { position: relative; width: 220px; height: 90px; margin: 0 auto; }
+        .goal-text-bg { position: absolute; width: 100%; height: 100%; font-size: 80px; font-weight: 900; color: #E5E5EA; line-height: 90px; text-align: center; margin: 0; letter-spacing: -3px; transition: font-size 0.3s; }
         .goal-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; overflow: hidden; transition: height 1s ease; }
-        .goal-text-color { position: absolute; bottom: 0; left: 0; width: 160px; height: 90px; font-size: 80px; font-weight: 900; color: var(--toss-blue); line-height: 90px; text-align: center; margin: 0; letter-spacing: -3px; }
+        .goal-text-color { position: absolute; bottom: 0; left: 0; width: 220px; height: 90px; font-size: 80px; font-weight: 900; color: var(--toss-blue); line-height: 90px; text-align: center; margin: 0; letter-spacing: -3px; transition: font-size 0.3s; }
 
         /* 입력 그룹 */
         .input-group { display: flex; flex-direction: column; gap: 10px; }
@@ -55,7 +57,7 @@
         #csvUrlInput { flex: 2; height: 40px; font-size: 13px; min-width: 0; }
         .sync-btn { flex: 1; height: 40px; background-color: var(--success-green); color: white; border: none; border-radius: 10px; font-weight: 600; min-width: 80px; white-space: nowrap; }
 
-        /* 모달 개선 */
+        /* 모달 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal { background: #fff; width: 90%; max-width: 340px; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
         .modal-btn-row { display: flex; gap: 8px; }
@@ -73,16 +75,18 @@
     <div class="card">
         <div class="segment-control">
             <div class="segment-btn active" onclick="setChartType('pie', this)">비율</div>
-            <div class="segment-btn" onclick="setChartType('goal', this)">💰 1억 달성률</div>
+            <div class="segment-btn" onclick="setChartType('goal', this)">💰 목표 달성률</div>
         </div>
         
         <div class="chart-container" id="chartArea"><canvas id="portfolioChart"></canvas></div>
         
         <div class="goal-container" id="goalArea">
+            <button onclick="changeGoal()" style="position: absolute; top: -10px; right: 0; background: #F2F2F7; border: none; padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; color: var(--text-sub);">⚙️ 목표 변경</button>
+            
             <div class="goal-wrapper">
-                <div class="goal-text-bg">1억</div>
+                <div class="goal-text-bg" id="goalBgTxt">1억</div>
                 <div class="goal-fill" id="goalFill">
-                    <div class="goal-text-color">1억</div>
+                    <div class="goal-text-color" id="goalColorTxt">1억</div>
                 </div>
             </div>
             <div id="goalPercent" style="font-size: 24px; font-weight: 800; color: var(--toss-blue); margin-top: 10px;">0.0%</div>
@@ -145,7 +149,9 @@
         Chart.register(ChartDataLabels);
         let data = JSON.parse(localStorage.getItem('assets_v5')) || [];
         let chart = null, selIdx = -1, rate = 1380;
-        const GOAL = 100000000;
+        
+        // 💡 설정된 목표 금액 가져오기 (기본값: 1억)
+        let GOAL = Number(localStorage.getItem('my_target_goal')) || 100000000;
 
         function comma(el) { 
             let v = el.value.replace(/[^0-9.]/g, ''); 
@@ -174,6 +180,28 @@
             render();
         }
 
+        // 💡 목표 금액 짧게 줄여주는 함수 (예: 150000000 -> 1.5억, 50000000 -> 5000만)
+        function formatShortMoney(v) {
+            if (v >= 100000000) return (v / 100000000).toLocaleString(undefined, {maximumFractionDigits: 2}) + "억";
+            if (v >= 10000) return (v / 10000).toLocaleString(undefined, {maximumFractionDigits: 0}) + "만";
+            return v.toLocaleString();
+        }
+
+        // 💡 목표 금액 변경 기능
+        function changeGoal() {
+            const input = prompt(`나만의 목표 금액을 숫자로 입력해주세요.\n(예: 5천만원 👉 50000000)\n\n현재 목표: ${GOAL.toLocaleString()}원`, GOAL);
+            if (input !== null) {
+                const num = Number(input.replace(/[^0-9]/g, ''));
+                if (num > 0) {
+                    GOAL = num;
+                    localStorage.setItem('my_target_goal', GOAL);
+                    render(); // 화면 즉시 업데이트
+                } else {
+                    alert("올바른 숫자를 입력해주세요.");
+                }
+            }
+        }
+
         function sortData() {
             const order = { '주식': 1, '코인': 2, '적금': 3, '현금': 4 };
             data.sort((a, b) => {
@@ -189,11 +217,25 @@
             let total = 0;
             data.forEach(item => total += (item.amount || 0));
 
-            // 1억 차오르는 효과 로직
+            // 💡 1. 목표 금액 글자 업데이트 및 글자 수에 따른 폰트 크기 자동 조절
+            const shortTxt = formatShortMoney(GOAL);
+            document.getElementById('goalBgTxt').innerText = shortTxt;
+            document.getElementById('goalColorTxt').innerText = shortTxt;
+            
+            let fontSize = "80px";
+            if (shortTxt.length >= 6) fontSize = "35px";
+            else if (shortTxt.length === 5) fontSize = "45px";
+            else if (shortTxt.length === 4) fontSize = "55px";
+            else if (shortTxt.length === 3) fontSize = "65px";
+
+            document.getElementById('goalBgTxt').style.fontSize = fontSize;
+            document.getElementById('goalColorTxt').style.fontSize = fontSize;
+
+            // 💡 2. 목표 달성률 물 차오르는 로직
             let p = Math.min((total / GOAL) * 100, 100);
             document.getElementById('goalFill').style.height = p + '%';
             document.getElementById('goalPercent').innerText = p.toFixed(1) + '%';
-            document.getElementById('goalRemain').innerText = total >= GOAL ? "🎉 1억 달성!" : `${(GOAL-total).toLocaleString()}원 남음`;
+            document.getElementById('goalRemain').innerText = total >= GOAL ? "🎉 목표 달성 완료!" : `${(GOAL-total).toLocaleString()}원 남음`;
 
             const labels = [], values = [], colors = [];
             data.forEach((item, i) => {
@@ -262,7 +304,6 @@
             document.getElementById('newName').value = ''; document.getElementById('newVal').value = '';
         }
 
-        // 모달 열 때 현재 수량/금액 표시
         function openM(i) { 
             selIdx = i; 
             const item = data[i];
@@ -277,7 +318,6 @@
         
         function closeM() { document.getElementById('modal').style.display='none'; document.getElementById('mInput').value = ''; }
         
-        // 덧셈, 뺄셈, 그리고 '아예 덮어쓰기(=)' 로직 추가
         function trade(t) {
             const v = raw(document.getElementById('mInput').value);
             if(v === undefined || v === '') return;
@@ -285,11 +325,11 @@
             
             let current = isMarket ? data[selIdx].qty : data[selIdx].amount;
 
-            if (t === 'set') current = v; // 직접 숫자로 덮어쓰기 (가장 편리함)
-            else if (t === 'buy') current += v; // 더하기
-            else if (t === 'sell') current -= v; // 빼기
+            if (t === 'set') current = v; 
+            else if (t === 'buy') current += v; 
+            else if (t === 'sell') current -= v; 
             
-            if (current < 0) current = 0; // 마이너스 방지
+            if (current < 0) current = 0; 
             
             if(isMarket) data[selIdx].qty = current;
             else data[selIdx].amount = current;
@@ -300,7 +340,6 @@
         function del() { if(confirm('삭제할까요?')) { data.splice(selIdx, 1); save(); closeM(); } }
         function save() { localStorage.setItem('assets_v5', JSON.stringify(data)); render(); }
 
-        // 강력한 캐시 무시 동기화 및 상태 알림 기능
         async function sync(isAuto = false) {
             const url = document.getElementById('csvUrl').value.trim();
             if(!url) {
@@ -308,14 +347,12 @@
                 return;
             }
             
-            // 토스트 알림 띄우기
             const toast = document.getElementById('syncToast');
             toast.innerText = '⏳ 동기화 진행 중...';
             toast.style.display = 'block';
             
             localStorage.setItem('csv_url', url);
             try {
-                // 핵심: 구글 시트 캐시(과거 데이터) 무시하기 위해 시간값을 붙여 무조건 최신 데이터를 강제 다운로드
                 const fetchUrl = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
                 const res = await fetch(fetchUrl);
                 const text = await res.text();
@@ -341,7 +378,6 @@
                 });
                 save(); 
                 
-                // 성공 알림
                 toast.innerText = `✅ 최신 가격으로 업데이트 완료!`;
                 setTimeout(() => { toast.style.display = 'none'; }, 2000);
             } catch(e) { 
