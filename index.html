@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="자산관리">
-    <title>자산 관리 v3.4</title>
+    <title>자산 관리 v3.5</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
@@ -24,7 +24,7 @@
         .segment-btn.active { background-color: #FFFFFF; color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
         /* 저금통 & 차트 */
-        .chart-container { position: relative; height: 220px; }
+        .chart-container { position: relative; height: 220px; display: flex; align-items: center; justify-content: center; }
         .piggy-container { display: none; flex-direction: column; align-items: center; justify-content: center; height: 220px; }
         .piggy-wrapper { position: relative; width: 120px; height: 120px; }
         .piggy-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; overflow: hidden; transition: height 1s ease; }
@@ -56,15 +56,20 @@
         .modal { background: #fff; width: 85%; max-width: 300px; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
         .modal-btn-row { display: flex; gap: 8px; }
         .modal-btn { flex: 1; height: 44px; border: none; border-radius: 10px; font-weight: bold; color: white; }
+        
+        /* 당겨서 새로고침 인디케이터 */
+        #pullIndicator { text-align: center; font-size: 12px; color: var(--text-sub); height: 0; overflow: hidden; transition: 0.2s; }
     </style>
 </head>
 <body>
+
+    <div id="pullIndicator">↓ 위에서 아래로 당겨서 동기화 ↓</div>
 
     <div class="header"><h1>자산 현황</h1></div>
 
     <div class="card">
         <div class="segment-control">
-            <div class="segment-btn active" onclick="setChartType('doughnut', this)">비율</div>
+            <div class="segment-btn active" onclick="setChartType('pie', this)">비율</div>
             <div class="segment-btn" onclick="setChartType('piggy', this)">🐷 저금통</div>
         </div>
         <div class="chart-container" id="chartArea"><canvas id="portfolioChart"></canvas></div>
@@ -149,24 +154,35 @@
         function setChartType(t, btn) {
             document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById('chartArea').style.display = t === 'doughnut' ? 'block' : 'none';
+            document.getElementById('chartArea').style.display = t === 'pie' ? 'flex' : 'none';
             document.getElementById('piggyArea').style.display = t === 'piggy' ? 'flex' : 'none';
             render();
         }
 
+        // 데이터 카테고리별 정렬 로직 (주식 > 코인 > 적금 > 현금 순)
+        function sortData() {
+            const order = { '주식': 1, '코인': 2, '적금': 3, '현금': 4 };
+            data.sort((a, b) => {
+                if (order[a.cat] !== order[b.cat]) return order[a.cat] - order[b.cat];
+                return b.amount - a.amount; // 같은 카테고리 내에서는 금액 높은 순
+            });
+        }
+
         function render() {
+            sortData(); // 렌더링 전 무조건 정렬
+            
             const listEl = document.getElementById('list');
             listEl.innerHTML = '';
             let total = 0;
             data.forEach(item => total += (item.amount || 0));
 
-            // 저금통
+            // 저금통 로직
             let p = Math.min((total / GOAL) * 100, 100);
             document.getElementById('piggyFill').style.height = p + '%';
             document.getElementById('piggyPercent').innerText = p.toFixed(1) + '%';
             document.getElementById('piggyRemain').innerText = total >= GOAL ? "🎉 목표 달성!" : `${(GOAL-total).toLocaleString()}원 남음`;
 
-            // 리스트
+            // 리스트 렌더링
             const labels = [], values = [], colors = [];
             data.forEach((item, i) => {
                 const c = ["#007AFF", "#5856D6", "#AF52DE", "#FF2D55", "#FF9500", "#34C759", "#32ADE6"][i % 7];
@@ -193,16 +209,40 @@
 
             document.getElementById('totalAmount').innerText = Math.floor(total).toLocaleString() + '원';
             
-            // 차트 렌더링
+            // 🥧 원 차트 렌더링 (도넛 -> 원 차트로 변경)
             if(chart) chart.destroy();
             if(values.length > 0) {
                 chart = new Chart(document.getElementById('portfolioChart'), {
-                    type: 'doughnut',
-                    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }] },
-                    options: { cutout: '75%', plugins: { legend: { display: false }, datalabels: { color: '#fff', font: { weight: 'bold' }, formatter: (v, ctx) => {
-                        let sum = 0; ctx.chart.data.datasets[0].data.forEach(d => sum += d);
-                        return (v/sum*100) > 5 ? (v/sum*100).toFixed(1)+'%' : null;
-                    }}}}
+                    type: 'pie', // 원 차트로 변경
+                    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 1, borderColor: '#fff' }] },
+                    options: { 
+                        layout: { padding: { left: 0, right: 10 } },
+                        plugins: { 
+                            // 범례를 오른쪽에 배치하고 퍼센트 표시
+                            legend: { 
+                                display: true, 
+                                position: 'right',
+                                labels: {
+                                    boxWidth: 12,
+                                    font: { size: 12, family: '-apple-system' },
+                                    generateLabels: (chart) => {
+                                        const ds = chart.data.datasets[0];
+                                        return chart.data.labels.map((label, i) => {
+                                            const val = ds.data[i];
+                                            const pct = total > 0 ? (val / total * 100).toFixed(1) + '%' : '0%';
+                                            return {
+                                                text: `${label} (${pct})`, // 옆에 퍼센트 표시
+                                                fillStyle: ds.backgroundColor[i],
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                }
+                            }, 
+                            datalabels: { display: false } // 차트 내부의 글자는 숨김 (오른쪽 범례로 이동했으므로)
+                        },
+                        maintainAspectRatio: false
+                    }
                 });
             }
         }
@@ -230,13 +270,11 @@
             
             if (data[selIdx].amount < 0) data[selIdx].amount = 0;
             if (data[selIdx].qty < 0) data[selIdx].qty = 0;
-            
             save(); closeM();
         }
         function del() { if(confirm('삭제할까요?')) { data.splice(selIdx, 1); save(); closeM(); } }
         function save() { localStorage.setItem('assets_v5', JSON.stringify(data)); render(); }
 
-        // 자동 동기화 구분을 위한 매개변수 (isAuto) 추가
         async function sync(isAuto = false) {
             const url = document.getElementById('csvUrl').value.trim();
             if(!url) {
@@ -272,21 +310,43 @@
                     }
                 });
                 save(); 
-                // 수동 동기화일 때만 완료 알림 띄우기
                 if(!isAuto) alert(`✅ ${count}개 자산 업데이트 완료!\n(환율: ${rate}원 적용)`);
             } catch(e) { 
-                // 수동 동기화일 때만 에러 알림 띄우기
                 if(!isAuto) alert('동기화 실패! 구글 시트 URL 형식을 확인해주세요.'); 
             } finally {
                 btn.innerText = "동기화";
             }
         }
 
+        // 👇 화면을 위에서 아래로 당겨서 동기화(Pull-to-Refresh) 로직
+        let touchStartY = 0;
+        const ind = document.getElementById('pullIndicator');
+        
+        document.addEventListener('touchstart', e => { 
+            touchStartY = e.touches[0].clientY; 
+        }, {passive: true});
+
+        document.addEventListener('touchmove', e => {
+            if(window.scrollY === 0) {
+                const pullDistance = e.touches[0].clientY - touchStartY;
+                if(pullDistance > 50) ind.style.height = '30px'; // 당길 때 인디케이터 보임
+            }
+        }, {passive: true});
+
+        document.addEventListener('touchend', e => {
+            const touchEndY = e.changedTouches[0].clientY;
+            ind.style.height = '0'; // 손을 떼면 숨김
+            
+            // 맨 위에서 100px 이상 아래로 쓸어내렸을 경우 동기화 실행
+            if (window.scrollY === 0 && (touchEndY - touchStartY > 100)) {
+                sync(false); 
+            }
+        });
+
         window.onload = () => {
             const savedUrl = localStorage.getItem('csv_url');
             if(savedUrl) {
                 document.getElementById('csvUrl').value = savedUrl;
-                // 앱 실행 시 백그라운드에서 조용히 자동 동기화 실행
                 sync(true); 
             }
             adjustPlaceholder();
