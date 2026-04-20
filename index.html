@@ -2,135 +2,296 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>내 자산 포트폴리오</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="자산관리">
+    <title>자산 관리 v3.4</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
-        :root {
-            --bg-color: #f2f2f7;
-            --card-bg: #ffffff;
-            --text-main: #1c1c1e;
-            --text-sub: #8e8e93;
-            --accent: #007aff;
-            --success: #34c759;
-        }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: var(--text-main); line-height: 1.5; }
-        .total-section { text-align: center; padding: 40px 0; }
-        .total-label { font-size: 14px; color: var(--text-sub); margin-bottom: 8px; font-weight: 500; }
-        .total-amount { font-size: 36px; font-weight: 800; color: var(--text-main); letter-spacing: -1px; }
+        :root { --bg-color: #F2F2F7; --card-bg: #FFFFFF; --text-main: #000000; --text-sub: #8E8E93; --toss-blue: #007AFF; --toss-red: #FF3B30; --success-green: #34C759; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); margin: 0; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom) 16px; color: var(--text-main); }
+        .header { margin: 20px 0; }
+        .header h1 { font-size: 28px; font-weight: 700; margin: 0; }
         
-        .card { background: var(--card-bg); border-radius: 20px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .card-title { font-size: 18px; font-weight: 700; margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between; }
+        .card { background-color: var(--card-bg); border-radius: 18px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
-        .asset-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f2f2f7; }
-        .asset-item:last-child { border-bottom: none; }
-        .asset-info .name { font-weight: 600; font-size: 16px; }
-        .asset-info .details { font-size: 12px; color: var(--text-sub); }
-        .asset-value { text-align: right; font-weight: 600; }
+        /* 탭 버튼 */
+        .segment-control { display: flex; background-color: #E5E5EA; border-radius: 8px; padding: 2px; margin-bottom: 15px; }
+        .segment-btn { flex: 1; text-align: center; padding: 8px 0; font-size: 14px; font-weight: 600; color: var(--text-sub); border-radius: 6px; cursor: pointer; }
+        .segment-btn.active { background-color: #FFFFFF; color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-        #sync-status {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.8); color: white; padding: 10px 20px;
-            border-radius: 25px; font-size: 13px; z-index: 1000;
-            display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-        
-        .btn { width: 100%; padding: 16px; border-radius: 14px; border: none; background: var(--accent); color: white; font-size: 16px; font-weight: 600; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-        .btn-sync { background: var(--success); margin-top: 10px; }
+        /* 저금통 & 차트 */
+        .chart-container { position: relative; height: 220px; }
+        .piggy-container { display: none; flex-direction: column; align-items: center; justify-content: center; height: 220px; }
+        .piggy-wrapper { position: relative; width: 120px; height: 120px; }
+        .piggy-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; overflow: hidden; transition: height 1s ease; }
+        .piggy-text { font-size: 80px; line-height: 120px; text-align: center; }
+
+        /* 입력 그룹 */
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        .input-row { display: flex; gap: 8px; flex-wrap: wrap; } 
+        input, select { height: 48px; border-radius: 12px; border: 1px solid #D1D1D6; padding: 0 12px; font-size: 16px; background-color: #FAFAFA; outline: none; flex: 1 1 45%; min-width: 130px; }
+        .add-btn { height: 50px; background-color: var(--toss-blue); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; width: 100%; }
+
+        /* 리스트 항목 */
+        .asset-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 0.5px solid #E5E5EA; gap: 10px; }
+        .item-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; } 
+        .color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .item-info { min-width: 0; flex: 1; }
+        .item-name { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .item-cat { font-size: 12px; color: var(--text-sub); }
+        .item-right { text-align: right; flex-shrink: 0; }
+        .item-amount { font-size: 16px; font-weight: 600; display: block; }
+        .item-percent { font-size: 11px; color: var(--toss-blue); font-weight: 600; }
+
+        .sync-row { display: flex; gap: 8px; margin-top: 8px; }
+        #csvUrlInput { flex: 2; height: 40px; font-size: 13px; min-width: 0; }
+        .sync-btn { flex: 1; height: 40px; background-color: var(--success-green); color: white; border: none; border-radius: 10px; font-weight: 600; min-width: 80px; white-space: nowrap; }
+
+        /* 모달 */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal { background: #fff; width: 85%; max-width: 300px; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .modal-btn-row { display: flex; gap: 8px; }
+        .modal-btn { flex: 1; height: 44px; border: none; border-radius: 10px; font-weight: bold; color: white; }
     </style>
 </head>
 <body>
 
-    <div id="sync-status">시트와 연결 중...</div>
+    <div class="header"><h1>자산 현황</h1></div>
 
-    <div class="total-section">
-        <div class="total-label">총 자산 합계</div>
-        <div id="total-assets" class="total-amount">₩ 0</div>
+    <div class="card">
+        <div class="segment-control">
+            <div class="segment-btn active" onclick="setChartType('doughnut', this)">비율</div>
+            <div class="segment-btn" onclick="setChartType('piggy', this)">🐷 저금통</div>
+        </div>
+        <div class="chart-container" id="chartArea"><canvas id="portfolioChart"></canvas></div>
+        <div class="piggy-container" id="piggyArea">
+            <div class="piggy-wrapper">
+                <div class="piggy-text" style="filter: grayscale(100%); opacity: 0.2;">🐖</div>
+                <div class="piggy-fill" id="piggyFill"><div class="piggy-text">🐖</div></div>
+            </div>
+            <div id="piggyPercent" style="font-size: 24px; font-weight: 800; color: var(--toss-blue); margin-top: 10px;">0.0%</div>
+            <div id="piggyRemain" style="font-size: 13px; color: var(--text-sub);">목표 계산 중...</div>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:15px; border-top:1px solid #F2F2F7; padding-top:15px;">
+            <div style="font-size:12px; color:var(--text-sub);" id="rateInfo">환율: 미동기화</div>
+            <div id="totalAmount" style="font-size: 22px; font-weight: 800; color: var(--toss-blue);">0원</div>
+        </div>
     </div>
 
     <div class="card">
-        <div class="card-title">💰 나의 자산</div>
-        <div id="asset-list">
+        <div class="input-group">
+            <select id="assetCat" onchange="adjustPlaceholder()">
+                <option value="주식">📈 주식 (Ticker)</option>
+                <option value="코인">🪙 코인 (Ticker)</option>
+                <option value="현금">💵 현금 (금액)</option>
+                <option value="적금">🏦 적금 (금액)</option>
+            </select>
+            <div class="input-row">
+                <input type="text" id="newName" placeholder="예: IREN">
+                <input type="text" id="newVal" placeholder="수량 또는 금액" oninput="comma(this)">
             </div>
+            <button class="add-btn" onclick="add()">리스트에 등록하기</button>
+        </div>
     </div>
 
-    <button class="btn btn-sync" onclick="syncWithSheets()">지금 새로고침</button>
+    <div class="card">
+        <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">구글 시트 동기화</div>
+        <div class="sync-row">
+            <input type="text" id="csvUrl" placeholder="CSV URL을 입력하세요">
+            <button class="sync-btn" onclick="sync(false)">동기화</button>
+        </div>
+    </div>
+
+    <div id="list" class="card"></div>
+
+    <div id="modal" class="modal-overlay">
+        <div class="modal">
+            <div id="mTitle" style="font-weight:700; text-align:center;">자산명</div>
+            <input type="text" id="mInput" placeholder="수량/금액 입력" oninput="comma(this)">
+            <div class="modal-btn-row">
+                <button class="modal-btn" style="background:var(--toss-red)" onclick="trade('sell')">빼기(-)</button>
+                <button class="modal-btn" style="background:var(--toss-blue)" onclick="trade('buy')">더하기(+)</button>
+            </div>
+            <button onclick="del()" style="border:none; color:var(--toss-red); background:none; padding:10px;">목록에서 삭제</button>
+            <button onclick="closeM()" style="border:none; color:var(--text-sub); background:none;">닫기</button>
+        </div>
+    </div>
 
     <script>
-        // 1. 본인의 구글 시트 CSV 주소
-        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSuqBPCqUFgIdZe3Fccaj70NqxozMxgCVK6vc4MkEs7ZhP2bEtrZ7u7UjNm8rB5PdICQy19Yad6aQnu/pub?output=csv';
+        Chart.register(ChartDataLabels);
+        let data = JSON.parse(localStorage.getItem('assets_v5')) || [];
+        let chart = null, selIdx = -1, rate = 1380;
+        const GOAL = 100000000;
 
-        // 앱 실행 시 자동 실행
-        window.onload = function() {
-            renderAssets();   // 기존 저장된 데이터 먼저 보여주기
-            syncWithSheets(); // 즉시 구글 시트 최신화 (자동 동기화)
-        };
-
-        function showStatus(msg, time = 2000) {
-            const el = document.getElementById('sync-status');
-            el.innerText = msg;
-            el.style.display = 'block';
-            setTimeout(() => el.style.display = 'none', time);
+        function comma(el) { 
+            let v = el.value.replace(/[^0-9.]/g, ''); 
+            if(v) el.value = Number(v.split('.')[0]).toLocaleString() + (v.includes('.') ? '.' + v.split('.')[1] : '');
         }
+        function raw(v) { return Number(v.replace(/,/g, '')); }
 
-        async function syncWithSheets() {
-            showStatus("시트에서 최신 가격을 가져오는 중...");
-            try {
-                const res = await fetch(SHEET_URL);
-                const csv = await res.text();
-                const rows = csv.split('\n').slice(1); // 헤더 제외
-                
-                let sheetPrices = {};
-                rows.forEach(row => {
-                    const [name, price] = row.split(',');
-                    if(name) sheetPrices[name.trim()] = parseFloat(price);
-                });
-
-                // 내 로컬 저장소 데이터 업데이트
-                let myAssets = JSON.parse(localStorage.getItem('myAssets') || '[]');
-                myAssets = myAssets.map(asset => {
-                    if (sheetPrices[asset.name]) {
-                        asset.price = sheetPrices[asset.name];
-                    }
-                    return asset;
-                });
-
-                localStorage.setItem('myAssets', JSON.stringify(myAssets));
-                renderAssets();
-                showStatus("✅ 동기화 완료!");
-            } catch (e) {
-                showStatus("❌ 연결 실패 (인터넷 확인)");
+        function adjustPlaceholder() {
+            const cat = document.getElementById('assetCat').value;
+            const nameInput = document.getElementById('newName');
+            const valInput = document.getElementById('newVal');
+            if (cat === '주식' || cat === '코인') {
+                nameInput.placeholder = "Ticker (예: IREN)";
+                valInput.placeholder = "보유 수량";
+            } else {
+                nameInput.placeholder = "명칭 (예: 파킹통장)";
+                valInput.placeholder = "현재 금액";
             }
         }
 
-        function renderAssets() {
-            const myAssets = JSON.parse(localStorage.getItem('myAssets') || '[]');
-            const listEl = document.getElementById('asset-list');
+        function setChartType(t, btn) {
+            document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('chartArea').style.display = t === 'doughnut' ? 'block' : 'none';
+            document.getElementById('piggyArea').style.display = t === 'piggy' ? 'flex' : 'none';
+            render();
+        }
+
+        function render() {
+            const listEl = document.getElementById('list');
+            listEl.innerHTML = '';
             let total = 0;
+            data.forEach(item => total += (item.amount || 0));
 
-            listEl.innerHTML = myAssets.length ? '' : '<div style="color:#8e8e93; text-align:center;">자산을 등록해 주세요.</div>';
+            // 저금통
+            let p = Math.min((total / GOAL) * 100, 100);
+            document.getElementById('piggyFill').style.height = p + '%';
+            document.getElementById('piggyPercent').innerText = p.toFixed(1) + '%';
+            document.getElementById('piggyRemain').innerText = total >= GOAL ? "🎉 목표 달성!" : `${(GOAL-total).toLocaleString()}원 남음`;
 
-            myAssets.forEach(asset => {
-                // 주식/코인은 수량 * 가격, 나머지는 입력값 그대로 계산
-                let value = (asset.type === 'stock' || asset.type === 'coin') 
-                            ? asset.amount * asset.price 
-                            : asset.amount;
-                total += value;
+            // 리스트
+            const labels = [], values = [], colors = [];
+            data.forEach((item, i) => {
+                const c = ["#007AFF", "#5856D6", "#AF52DE", "#FF2D55", "#FF9500", "#34C759", "#32ADE6"][i % 7];
+                labels.push(item.name); values.push(item.amount); colors.push(c);
+                
+                const isMarket = (item.cat === '주식' || item.cat === '코인');
+                const subText = isMarket ? `${item.cat} · ${item.qty.toLocaleString()}${item.cat==='주식'?'주':'개'}` : item.cat;
 
                 listEl.innerHTML += `
-                    <div class="asset-item">
-                        <div class="asset-info">
-                            <div class="name">${asset.name}</div>
-                            <div class="details">${asset.type === 'stock' || asset.type === 'coin' ? '현재가: ₩' + asset.price.toLocaleString() : '고정 자산'}</div>
+                    <div class="asset-item" onclick="openM(${i})">
+                        <div class="item-left">
+                            <div class="color-dot" style="background:${c}"></div>
+                            <div class="item-info">
+                                <span class="item-name">${item.name}</span>
+                                <span class="item-cat">${subText}</span>
+                            </div>
                         </div>
-                        <div class="asset-value">₩ ${value.toLocaleString()}</div>
-                    </div>
-                `;
+                        <div class="item-right">
+                            <span class="item-amount">${Math.floor(item.amount).toLocaleString()}원</span>
+                            <span class="item-percent">${total>0?(item.amount/total*100).toFixed(1):0}%</span>
+                        </div>
+                    </div>`;
             });
 
-            document.getElementById('total-assets').innerText = '₩ ' + total.toLocaleString();
+            document.getElementById('totalAmount').innerText = Math.floor(total).toLocaleString() + '원';
+            
+            // 차트 렌더링
+            if(chart) chart.destroy();
+            if(values.length > 0) {
+                chart = new Chart(document.getElementById('portfolioChart'), {
+                    type: 'doughnut',
+                    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }] },
+                    options: { cutout: '75%', plugins: { legend: { display: false }, datalabels: { color: '#fff', font: { weight: 'bold' }, formatter: (v, ctx) => {
+                        let sum = 0; ctx.chart.data.datasets[0].data.forEach(d => sum += d);
+                        return (v/sum*100) > 5 ? (v/sum*100).toFixed(1)+'%' : null;
+                    }}}}
+                });
+            }
         }
+
+        function add() {
+            const name = document.getElementById('newName').value.trim().toUpperCase();
+            const val = raw(document.getElementById('newVal').value);
+            if(!name || !val) return alert("자산명과 수량을 입력해주세요.");
+            
+            const cat = document.getElementById('assetCat').value;
+            const isMarket = (cat === '주식' || cat === '코인');
+            data.push({ cat, name, qty: isMarket ? val : 0, amount: isMarket ? 0 : val });
+            save();
+            document.getElementById('newName').value = ''; document.getElementById('newVal').value = '';
+        }
+
+        function openM(i) { selIdx = i; document.getElementById('mTitle').innerText = data[i].name; document.getElementById('modal').style.display='flex'; }
+        function closeM() { document.getElementById('modal').style.display='none'; document.getElementById('mInput').value = ''; }
+        function trade(t) {
+            const v = raw(document.getElementById('mInput').value);
+            if(!v) return;
+            const isMarket = (data[selIdx].cat === '주식' || data[selIdx].cat === '코인');
+            if(!isMarket) data[selIdx].amount += (t==='buy'? v : -v);
+            else data[selIdx].qty += (t==='buy'? v : -v);
+            
+            if (data[selIdx].amount < 0) data[selIdx].amount = 0;
+            if (data[selIdx].qty < 0) data[selIdx].qty = 0;
+            
+            save(); closeM();
+        }
+        function del() { if(confirm('삭제할까요?')) { data.splice(selIdx, 1); save(); closeM(); } }
+        function save() { localStorage.setItem('assets_v5', JSON.stringify(data)); render(); }
+
+        // 자동 동기화 구분을 위한 매개변수 (isAuto) 추가
+        async function sync(isAuto = false) {
+            const url = document.getElementById('csvUrl').value.trim();
+            if(!url) {
+                if(!isAuto) alert("구글 시트 CSV URL을 입력해주세요.");
+                return;
+            }
+            
+            const btn = document.querySelector('.sync-btn');
+            btn.innerText = "⏳";
+            
+            localStorage.setItem('csv_url', url);
+            try {
+                const res = await fetch(url);
+                const text = await res.text();
+                const rows = text.split(/\r?\n/).map(r => r.split(',').map(c => c.replace(/"/g, '').trim()));
+                
+                const rRow = rows.find(r => r[0] && r[0].toUpperCase() === 'EXCHANGE_RATE');
+                if(rRow && rRow[1]) { 
+                    rate = parseFloat(rRow[1]); 
+                    document.getElementById('rateInfo').innerText = `적용 환율: ${rate.toLocaleString()}원`; 
+                }
+
+                let count = 0;
+                data.forEach(item => {
+                    const isMarket = (item.cat === '주식' || item.cat === '코인');
+                    if(isMarket) {
+                        const match = rows.find(r => r[0] && r[0].toUpperCase() === item.name);
+                        if(match && match[1]) { 
+                            const price = parseFloat(match[1]);
+                            item.amount = item.qty * price * rate; 
+                            count++; 
+                        }
+                    }
+                });
+                save(); 
+                // 수동 동기화일 때만 완료 알림 띄우기
+                if(!isAuto) alert(`✅ ${count}개 자산 업데이트 완료!\n(환율: ${rate}원 적용)`);
+            } catch(e) { 
+                // 수동 동기화일 때만 에러 알림 띄우기
+                if(!isAuto) alert('동기화 실패! 구글 시트 URL 형식을 확인해주세요.'); 
+            } finally {
+                btn.innerText = "동기화";
+            }
+        }
+
+        window.onload = () => {
+            const savedUrl = localStorage.getItem('csv_url');
+            if(savedUrl) {
+                document.getElementById('csvUrl').value = savedUrl;
+                // 앱 실행 시 백그라운드에서 조용히 자동 동기화 실행
+                sync(true); 
+            }
+            adjustPlaceholder();
+            render();
+        };
     </script>
 </body>
 </html>
