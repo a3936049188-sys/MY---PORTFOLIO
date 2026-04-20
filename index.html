@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="자산관리">
-    <title>자산 관리 v3.5</title>
+    <title>자산 관리 v3.6</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
@@ -23,12 +23,16 @@
         .segment-btn { flex: 1; text-align: center; padding: 8px 0; font-size: 14px; font-weight: 600; color: var(--text-sub); border-radius: 6px; cursor: pointer; }
         .segment-btn.active { background-color: #FFFFFF; color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-        /* 저금통 & 차트 */
+        /* 동기화 알림 토스트 (화면 상단) */
+        #syncToast { display: none; position: fixed; top: env(safe-area-inset-top, 20px); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: bold; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: 0.3s; white-space: nowrap; }
+
+        /* 1억 목표 (글자 차오르는 효과) */
         .chart-container { position: relative; height: 220px; display: flex; align-items: center; justify-content: center; }
-        .piggy-container { display: none; flex-direction: column; align-items: center; justify-content: center; height: 220px; }
-        .piggy-wrapper { position: relative; width: 120px; height: 120px; }
-        .piggy-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; overflow: hidden; transition: height 1s ease; }
-        .piggy-text { font-size: 80px; line-height: 120px; text-align: center; }
+        .goal-container { display: none; flex-direction: column; align-items: center; justify-content: center; height: 220px; }
+        .goal-wrapper { position: relative; width: 160px; height: 90px; margin: 0 auto; }
+        .goal-text-bg { position: absolute; width: 100%; height: 100%; font-size: 80px; font-weight: 900; color: #E5E5EA; line-height: 90px; text-align: center; margin: 0; letter-spacing: -3px; }
+        .goal-fill { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; overflow: hidden; transition: height 1s ease; }
+        .goal-text-color { position: absolute; bottom: 0; left: 0; width: 160px; height: 90px; font-size: 80px; font-weight: 900; color: var(--toss-blue); line-height: 90px; text-align: center; margin: 0; letter-spacing: -3px; }
 
         /* 입력 그룹 */
         .input-group { display: flex; flex-direction: column; gap: 10px; }
@@ -51,18 +55,17 @@
         #csvUrlInput { flex: 2; height: 40px; font-size: 13px; min-width: 0; }
         .sync-btn { flex: 1; height: 40px; background-color: var(--success-green); color: white; border: none; border-radius: 10px; font-weight: 600; min-width: 80px; white-space: nowrap; }
 
-        /* 모달 */
+        /* 모달 개선 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
-        .modal { background: #fff; width: 85%; max-width: 300px; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .modal { background: #fff; width: 90%; max-width: 340px; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
         .modal-btn-row { display: flex; gap: 8px; }
-        .modal-btn { flex: 1; height: 44px; border: none; border-radius: 10px; font-weight: bold; color: white; }
-        
-        /* 당겨서 새로고침 인디케이터 */
+        .modal-btn { flex: 1; height: 48px; border: none; border-radius: 10px; font-weight: bold; color: white; font-size: 15px; }
         #pullIndicator { text-align: center; font-size: 12px; color: var(--text-sub); height: 0; overflow: hidden; transition: 0.2s; }
     </style>
 </head>
 <body>
 
+    <div id="syncToast">⏳ 동기화 진행 중...</div>
     <div id="pullIndicator">↓ 위에서 아래로 당겨서 동기화 ↓</div>
 
     <div class="header"><h1>자산 현황</h1></div>
@@ -70,17 +73,22 @@
     <div class="card">
         <div class="segment-control">
             <div class="segment-btn active" onclick="setChartType('pie', this)">비율</div>
-            <div class="segment-btn" onclick="setChartType('piggy', this)">🐷 저금통</div>
+            <div class="segment-btn" onclick="setChartType('goal', this)">💰 1억 달성률</div>
         </div>
+        
         <div class="chart-container" id="chartArea"><canvas id="portfolioChart"></canvas></div>
-        <div class="piggy-container" id="piggyArea">
-            <div class="piggy-wrapper">
-                <div class="piggy-text" style="filter: grayscale(100%); opacity: 0.2;">🐖</div>
-                <div class="piggy-fill" id="piggyFill"><div class="piggy-text">🐖</div></div>
+        
+        <div class="goal-container" id="goalArea">
+            <div class="goal-wrapper">
+                <div class="goal-text-bg">1억</div>
+                <div class="goal-fill" id="goalFill">
+                    <div class="goal-text-color">1억</div>
+                </div>
             </div>
-            <div id="piggyPercent" style="font-size: 24px; font-weight: 800; color: var(--toss-blue); margin-top: 10px;">0.0%</div>
-            <div id="piggyRemain" style="font-size: 13px; color: var(--text-sub);">목표 계산 중...</div>
+            <div id="goalPercent" style="font-size: 24px; font-weight: 800; color: var(--toss-blue); margin-top: 10px;">0.0%</div>
+            <div id="goalRemain" style="font-size: 13px; color: var(--text-sub);">목표 계산 중...</div>
         </div>
+
         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:15px; border-top:1px solid #F2F2F7; padding-top:15px;">
             <div style="font-size:12px; color:var(--text-sub);" id="rateInfo">환율: 미동기화</div>
             <div id="totalAmount" style="font-size: 22px; font-weight: 800; color: var(--toss-blue);">0원</div>
@@ -115,13 +123,20 @@
 
     <div id="modal" class="modal-overlay">
         <div class="modal">
-            <div id="mTitle" style="font-weight:700; text-align:center;">자산명</div>
-            <input type="text" id="mInput" placeholder="수량/금액 입력" oninput="comma(this)">
+            <div id="mTitle" style="font-weight:700; text-align:center; font-size: 20px;">자산명</div>
+            <div id="mCurrentInfo" style="text-align:center; font-size:14px; color:var(--text-sub); margin-bottom: 5px;">현재: 0</div>
+            
+            <input type="text" id="mInput" placeholder="변경할 수량/금액 입력" oninput="comma(this)">
+            
             <div class="modal-btn-row">
-                <button class="modal-btn" style="background:var(--toss-red)" onclick="trade('sell')">빼기(-)</button>
-                <button class="modal-btn" style="background:var(--toss-blue)" onclick="trade('buy')">더하기(+)</button>
+                <button class="modal-btn" style="background:#E5E5EA; color:black; flex:1.5;" onclick="trade('set')">변경 (=)</button>
             </div>
-            <button onclick="del()" style="border:none; color:var(--toss-red); background:none; padding:10px;">목록에서 삭제</button>
+            <div class="modal-btn-row">
+                <button class="modal-btn" style="background:var(--toss-red);" onclick="trade('sell')">빼기 (-)</button>
+                <button class="modal-btn" style="background:var(--toss-blue);" onclick="trade('buy')">더하기 (+)</button>
+            </div>
+            
+            <button onclick="del()" style="border:none; color:var(--toss-red); background:none; padding:10px; margin-top: 5px;">목록에서 완전 삭제</button>
             <button onclick="closeM()" style="border:none; color:var(--text-sub); background:none;">닫기</button>
         </div>
     </div>
@@ -155,34 +170,31 @@
             document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById('chartArea').style.display = t === 'pie' ? 'flex' : 'none';
-            document.getElementById('piggyArea').style.display = t === 'piggy' ? 'flex' : 'none';
+            document.getElementById('goalArea').style.display = t === 'goal' ? 'flex' : 'none';
             render();
         }
 
-        // 데이터 카테고리별 정렬 로직 (주식 > 코인 > 적금 > 현금 순)
         function sortData() {
             const order = { '주식': 1, '코인': 2, '적금': 3, '현금': 4 };
             data.sort((a, b) => {
                 if (order[a.cat] !== order[b.cat]) return order[a.cat] - order[b.cat];
-                return b.amount - a.amount; // 같은 카테고리 내에서는 금액 높은 순
+                return b.amount - a.amount;
             });
         }
 
         function render() {
-            sortData(); // 렌더링 전 무조건 정렬
-            
+            sortData(); 
             const listEl = document.getElementById('list');
             listEl.innerHTML = '';
             let total = 0;
             data.forEach(item => total += (item.amount || 0));
 
-            // 저금통 로직
+            // 1억 차오르는 효과 로직
             let p = Math.min((total / GOAL) * 100, 100);
-            document.getElementById('piggyFill').style.height = p + '%';
-            document.getElementById('piggyPercent').innerText = p.toFixed(1) + '%';
-            document.getElementById('piggyRemain').innerText = total >= GOAL ? "🎉 목표 달성!" : `${(GOAL-total).toLocaleString()}원 남음`;
+            document.getElementById('goalFill').style.height = p + '%';
+            document.getElementById('goalPercent').innerText = p.toFixed(1) + '%';
+            document.getElementById('goalRemain').innerText = total >= GOAL ? "🎉 1억 달성!" : `${(GOAL-total).toLocaleString()}원 남음`;
 
-            // 리스트 렌더링
             const labels = [], values = [], colors = [];
             data.forEach((item, i) => {
                 const c = ["#007AFF", "#5856D6", "#AF52DE", "#FF2D55", "#FF9500", "#34C759", "#32ADE6"][i % 7];
@@ -209,39 +221,30 @@
 
             document.getElementById('totalAmount').innerText = Math.floor(total).toLocaleString() + '원';
             
-            // 🥧 원 차트 렌더링 (도넛 -> 원 차트로 변경)
             if(chart) chart.destroy();
             if(values.length > 0) {
                 chart = new Chart(document.getElementById('portfolioChart'), {
-                    type: 'pie', // 원 차트로 변경
+                    type: 'pie',
                     data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 1, borderColor: '#fff' }] },
                     options: { 
                         layout: { padding: { left: 0, right: 10 } },
                         plugins: { 
-                            // 범례를 오른쪽에 배치하고 퍼센트 표시
                             legend: { 
-                                display: true, 
-                                position: 'right',
+                                display: true, position: 'right',
                                 labels: {
-                                    boxWidth: 12,
-                                    font: { size: 12, family: '-apple-system' },
+                                    boxWidth: 12, font: { size: 12, family: '-apple-system' },
                                     generateLabels: (chart) => {
                                         const ds = chart.data.datasets[0];
                                         return chart.data.labels.map((label, i) => {
                                             const val = ds.data[i];
                                             const pct = total > 0 ? (val / total * 100).toFixed(1) + '%' : '0%';
-                                            return {
-                                                text: `${label} (${pct})`, // 옆에 퍼센트 표시
-                                                fillStyle: ds.backgroundColor[i],
-                                                index: i
-                                            };
+                                            return { text: `${label} (${pct})`, fillStyle: ds.backgroundColor[i], index: i };
                                         });
                                     }
                                 }
                             }, 
-                            datalabels: { display: false } // 차트 내부의 글자는 숨김 (오른쪽 범례로 이동했으므로)
-                        },
-                        maintainAspectRatio: false
+                            datalabels: { display: false } 
+                        }, maintainAspectRatio: false
                     }
                 });
             }
@@ -259,22 +262,45 @@
             document.getElementById('newName').value = ''; document.getElementById('newVal').value = '';
         }
 
-        function openM(i) { selIdx = i; document.getElementById('mTitle').innerText = data[i].name; document.getElementById('modal').style.display='flex'; }
+        // 모달 열 때 현재 수량/금액 표시
+        function openM(i) { 
+            selIdx = i; 
+            const item = data[i];
+            const isMarket = (item.cat === '주식' || item.cat === '코인');
+            const currentVal = isMarket ? item.qty : item.amount;
+            const unit = isMarket ? (item.cat==='주식'?'주':'개') : '원';
+            
+            document.getElementById('mTitle').innerText = item.name; 
+            document.getElementById('mCurrentInfo').innerText = `현재 보유량: ${currentVal.toLocaleString()}${unit}`;
+            document.getElementById('modal').style.display='flex'; 
+        }
+        
         function closeM() { document.getElementById('modal').style.display='none'; document.getElementById('mInput').value = ''; }
+        
+        // 덧셈, 뺄셈, 그리고 '아예 덮어쓰기(=)' 로직 추가
         function trade(t) {
             const v = raw(document.getElementById('mInput').value);
-            if(!v) return;
+            if(v === undefined || v === '') return;
             const isMarket = (data[selIdx].cat === '주식' || data[selIdx].cat === '코인');
-            if(!isMarket) data[selIdx].amount += (t==='buy'? v : -v);
-            else data[selIdx].qty += (t==='buy'? v : -v);
             
-            if (data[selIdx].amount < 0) data[selIdx].amount = 0;
-            if (data[selIdx].qty < 0) data[selIdx].qty = 0;
+            let current = isMarket ? data[selIdx].qty : data[selIdx].amount;
+
+            if (t === 'set') current = v; // 직접 숫자로 덮어쓰기 (가장 편리함)
+            else if (t === 'buy') current += v; // 더하기
+            else if (t === 'sell') current -= v; // 빼기
+            
+            if (current < 0) current = 0; // 마이너스 방지
+            
+            if(isMarket) data[selIdx].qty = current;
+            else data[selIdx].amount = current;
+
             save(); closeM();
         }
+
         function del() { if(confirm('삭제할까요?')) { data.splice(selIdx, 1); save(); closeM(); } }
         function save() { localStorage.setItem('assets_v5', JSON.stringify(data)); render(); }
 
+        // 강력한 캐시 무시 동기화 및 상태 알림 기능
         async function sync(isAuto = false) {
             const url = document.getElementById('csvUrl').value.trim();
             if(!url) {
@@ -282,12 +308,16 @@
                 return;
             }
             
-            const btn = document.querySelector('.sync-btn');
-            btn.innerText = "⏳";
+            // 토스트 알림 띄우기
+            const toast = document.getElementById('syncToast');
+            toast.innerText = '⏳ 동기화 진행 중...';
+            toast.style.display = 'block';
             
             localStorage.setItem('csv_url', url);
             try {
-                const res = await fetch(url);
+                // 핵심: 구글 시트 캐시(과거 데이터) 무시하기 위해 시간값을 붙여 무조건 최신 데이터를 강제 다운로드
+                const fetchUrl = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+                const res = await fetch(fetchUrl);
                 const text = await res.text();
                 const rows = text.split(/\r?\n/).map(r => r.split(',').map(c => c.replace(/"/g, '').trim()));
                 
@@ -310,37 +340,30 @@
                     }
                 });
                 save(); 
-                if(!isAuto) alert(`✅ ${count}개 자산 업데이트 완료!\n(환율: ${rate}원 적용)`);
+                
+                // 성공 알림
+                toast.innerText = `✅ 최신 가격으로 업데이트 완료!`;
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
             } catch(e) { 
-                if(!isAuto) alert('동기화 실패! 구글 시트 URL 형식을 확인해주세요.'); 
-            } finally {
-                btn.innerText = "동기화";
-            }
+                toast.innerText = `❌ 연결 실패 (주소를 확인하세요)`;
+                setTimeout(() => { toast.style.display = 'none'; }, 2500);
+            } 
         }
 
-        // 👇 화면을 위에서 아래로 당겨서 동기화(Pull-to-Refresh) 로직
         let touchStartY = 0;
         const ind = document.getElementById('pullIndicator');
         
-        document.addEventListener('touchstart', e => { 
-            touchStartY = e.touches[0].clientY; 
-        }, {passive: true});
-
+        document.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, {passive: true});
         document.addEventListener('touchmove', e => {
             if(window.scrollY === 0) {
                 const pullDistance = e.touches[0].clientY - touchStartY;
-                if(pullDistance > 50) ind.style.height = '30px'; // 당길 때 인디케이터 보임
+                if(pullDistance > 50) ind.style.height = '30px'; 
             }
         }, {passive: true});
-
         document.addEventListener('touchend', e => {
             const touchEndY = e.changedTouches[0].clientY;
-            ind.style.height = '0'; // 손을 떼면 숨김
-            
-            // 맨 위에서 100px 이상 아래로 쓸어내렸을 경우 동기화 실행
-            if (window.scrollY === 0 && (touchEndY - touchStartY > 100)) {
-                sync(false); 
-            }
+            ind.style.height = '0'; 
+            if (window.scrollY === 0 && (touchEndY - touchStartY > 100)) { sync(false); }
         });
 
         window.onload = () => {
