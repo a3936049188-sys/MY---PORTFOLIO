@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="자산관리">
-    <title>자산 관리 v3.9</title>
+    <title>자산 관리 v4.0</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
@@ -24,7 +24,6 @@
 
         #syncToast { display: none; position: fixed; top: env(safe-area-inset-top, 20px); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: bold; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: 0.3s; }
 
-        /* 💡 원형 목표 차오름 디자인 */
         .chart-container { position: relative; height: 220px; display: flex; align-items: center; justify-content: center; }
         .goal-container { display: none; flex-direction: column; align-items: center; justify-content: center; height: 220px; position: relative; }
         
@@ -32,9 +31,10 @@
         .goal-water { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: var(--toss-blue); transition: height 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
         .goal-text-overlay { position: relative; z-index: 2; font-size: 40px; font-weight: 900; color: var(--text-main); letter-spacing: -1.5px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
 
-        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
         .input-row { display: flex; gap: 8px; flex-wrap: wrap; } 
         input, select { height: 48px; border-radius: 12px; border: 1px solid #D1D1D6; padding: 0 12px; font-size: 16px; background-color: #FAFAFA; outline: none; flex: 1 1 45%; min-width: 130px; }
+        input:focus { border-color: var(--toss-blue); }
         .add-btn { height: 50px; background-color: var(--toss-blue); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; width: 100%; }
 
         .asset-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 0.5px solid #E5E5EA; gap: 10px; }
@@ -50,7 +50,6 @@
         .sync-row { display: flex; gap: 8px; margin-top: 8px; }
         .sync-btn { flex: 1; height: 40px; background-color: var(--success-green); color: white; border: none; border-radius: 10px; font-weight: 600; min-width: 80px; }
 
-        /* 모달 공통 스타일 */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
         .modal { background: #fff; width: 90%; max-width: 340px; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
         .modal-btn-row { display: flex; gap: 8px; }
@@ -76,12 +75,10 @@
         
         <div class="goal-container" id="goalArea">
             <button onclick="openGoalM()" style="position: absolute; top: -10px; right: 0; background: #F2F2F7; border: none; padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; color: var(--text-sub);">⚙️ 목표 변경</button>
-            
             <div class="goal-circle-bg">
                 <div class="goal-water" id="goalWater"></div>
                 <div class="goal-text-overlay" id="goalCenterTxt">1억</div>
             </div>
-
             <div id="goalPercent" style="font-size: 24px; font-weight: 800; color: var(--toss-blue); margin-top: 15px;">0.0%</div>
             <div id="goalRemain" style="font-size: 13px; color: var(--text-sub);">계산 중...</div>
         </div>
@@ -93,7 +90,7 @@
     </div>
 
     <div class="card">
-        <div class="input-group">
+        <div class="input-group" style="margin-bottom:0;">
             <select id="assetCat" onchange="adjustPlaceholder()">
                 <option value="주식">📈 주식 (Ticker)</option>
                 <option value="코인">🪙 코인 (Ticker)</option>
@@ -102,7 +99,7 @@
             </select>
             <div class="input-row">
                 <input type="text" id="newName" placeholder="예: VOO">
-                <input type="text" id="newVal" placeholder="수량 또는 금액" oninput="comma(this)">
+                <input type="tel" id="newVal" placeholder="수량 또는 금액" oninput="comma(this)">
             </div>
             <button class="add-btn" onclick="add()">리스트에 등록하기</button>
         </div>
@@ -118,9 +115,9 @@
                     <option value="연봉">연봉</option>
                     <option value="월급">월급</option>
                 </select>
-                <input type="text" id="salaryInput" placeholder="세전 금액 (예: 50,000,000)" oninput="comma(this); calcSalary();" style="flex: 1;">
+                <input type="tel" id="salaryInput" placeholder="세전 금액 (예: 50,000,000)" oninput="comma(this); calcSalary();" style="flex: 1;">
             </div>
-            <input type="text" id="nonTaxable" placeholder="비과세액 (기본 20만원 적용)" oninput="comma(this); calcSalary();">
+            <input type="tel" id="nonTaxable" placeholder="비과세액 (기본 20만원 적용)" oninput="comma(this); calcSalary();">
         </div>
         <div style="margin-top: 15px; border-top: 1px solid #E5E5EA; padding-top: 15px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
@@ -130,6 +127,62 @@
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <span style="font-size: 12px; color: var(--text-sub);">공제액 합계 (4대보험+세금 약식)</span>
                 <span id="deductResult" style="font-size: 13px; font-weight: 600; color: var(--toss-red);">0원</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">💰 1억 모으기 플랜</div>
+        
+        <div class="input-group">
+            <div style="font-size: 13px; color: var(--text-sub); margin-bottom: -5px;">이번 달 월급</div>
+            <input type="tel" id="app100m_s" placeholder="예: 3,000,000" oninput="comma(this); calc100m();">
+        </div>
+        
+        <div class="input-group">
+            <div style="font-size: 13px; color: var(--text-sub); margin-bottom: -5px;">사용할 생활비</div>
+            <input type="tel" id="app100m_l" placeholder="예: 1,000,000" oninput="comma(this); calc100m();">
+        </div>
+        
+        <div class="input-row" style="margin-top: 5px;">
+            <div style="flex:1;">
+                <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px; text-align: center;">일반투자 비율(%)</div>
+                <input type="tel" id="app100m_ir" value="80" oninput="calc100m();" style="width: 100%; text-align: center;">
+            </div>
+            <div style="flex:1;">
+                <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px; text-align: center;">코인 비율(%)</div>
+                <input type="tel" id="app100m_cr" value="20" oninput="calc100m();" style="width: 100%; text-align: center;">
+            </div>
+        </div>
+
+        <div style="background-color: #FAFAFA; border-radius: 14px; padding: 16px; margin-top: 15px; border: 1px solid #E5E5EA;">
+            <div style="display:flex; justify-content:space-between; margin-bottom: 8px;">
+                <span style="font-size: 14px; color: var(--text-sub);">🛡️ 보험 (고정)</span>
+                <span style="font-size: 14px; font-weight: 500;">-90,000원</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom: 8px;">
+                <span style="font-size: 14px; color: var(--text-sub);">👥 회비 (고정)</span>
+                <span style="font-size: 14px; font-weight: 500;">-50,000원</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom: 12px;">
+                <span style="font-size: 14px; color: var(--text-sub);">🏦 저축 (청약)</span>
+                <span style="font-size: 14px; font-weight: 500;">-150,000원</span>
+            </div>
+            
+            <div style="height: 1px; background-color: #D1D1D6; margin: 12px 0;"></div>
+            
+            <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 15px; font-weight: 600;">🔥 투자 가능 금액</span>
+                <span id="app100m_rt" style="font-size: 18px; font-weight: 800; color: var(--toss-blue);">0원</span>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-bottom: 6px;">
+                <span style="font-size: 13px; color: var(--text-main);">🏢 일반 투자</span>
+                <span id="app100m_ri" style="font-size: 14px; font-weight: 600;">0원</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span style="font-size: 13px; color: var(--text-main);">🪙 코인 투자</span>
+                <span id="app100m_rc" style="font-size: 14px; font-weight: 600;">0원</span>
             </div>
         </div>
     </div>
@@ -146,7 +199,7 @@
         <div class="modal">
             <div id="mTitle" style="font-weight:700; text-align:center; font-size: 20px;">자산명</div>
             <div id="mCurrentInfo" style="text-align:center; font-size:14px; color:var(--text-sub);">현재: 0</div>
-            <input type="text" id="mInput" placeholder="수량/금액 입력" oninput="comma(this)">
+            <input type="tel" id="mInput" placeholder="수량/금액 입력" oninput="comma(this)">
             <div class="modal-btn-row">
                 <button class="modal-btn" style="background:#E5E5EA; color:black; flex:1.5;" onclick="trade('set')">변경 (=)</button>
             </div>
@@ -163,7 +216,7 @@
         <div class="modal">
             <div style="font-weight:700; text-align:center; font-size: 20px;">목표 금액 설정</div>
             <div style="font-size:13px; color:var(--text-sub); text-align:center;">원하는 목표 금액을 숫자로 입력하세요.</div>
-            <input type="text" id="goalInput" placeholder="예: 100,000,000" oninput="comma(this)">
+            <input type="tel" id="goalInput" placeholder="예: 100,000,000" oninput="comma(this)">
             <button class="modal-btn" style="background:var(--toss-blue);" onclick="saveGoal()">저장하기</button>
             <button onclick="closeGoalM()" style="border:none; color:var(--text-sub); background:none;">취소</button>
         </div>
@@ -181,13 +234,13 @@
         }
         function raw(v) { return Number(v.replace(/,/g, '')); }
 
-        // ✨ 실수령액 계산 로직 추가
+        // 실수령액 계산
         function calcSalary() {
             let type = document.getElementById('salaryType').value;
             let amountVal = document.getElementById('salaryInput').value;
             let amount = amountVal ? raw(amountVal) : 0;
             let nonTaxVal = document.getElementById('nonTaxable').value;
-            let nonTax = nonTaxVal ? raw(nonTaxVal) : 200000; // 기본 비과세 20만원
+            let nonTax = nonTaxVal ? raw(nonTaxVal) : 200000;
 
             if (amount === 0) {
                 document.getElementById('netPayResult').innerText = '0원';
@@ -198,13 +251,11 @@
             let monthlyGross = type === '연봉' ? Math.floor(amount / 12) : amount;
             let taxable = Math.max(0, monthlyGross - nonTax);
 
-            // 4대보험 계산 (최근 요율 기준)
-            let pension = Math.min(Math.floor(taxable * 0.045 / 10) * 10, 265500); // 연금 4.5% (상한액 265,500원 적용)
-            let health = Math.floor(taxable * 0.03545 / 10) * 10; // 건보 3.545%
-            let care = Math.floor(health * 0.1295 / 10) * 10; // 장기요양 12.95%
-            let employ = Math.floor(taxable * 0.009 / 10) * 10; // 고용 0.9%
+            let pension = Math.min(Math.floor(taxable * 0.045 / 10) * 10, 265500);
+            let health = Math.floor(taxable * 0.03545 / 10) * 10;
+            let care = Math.floor(health * 0.1295 / 10) * 10;
+            let employ = Math.floor(taxable * 0.009 / 10) * 10;
 
-            // 근로소득세 약식 계산 (단순화된 구간 적용)
             let incomeTax = 0;
             if (monthlyGross > 1060000) {
                 if(monthlyGross <= 3000000) incomeTax = Math.floor(taxable * 0.03);
@@ -217,22 +268,48 @@
             let totalDeduct = pension + health + care + employ + incomeTax + localTax;
             let netPay = monthlyGross - totalDeduct;
 
-            // 결과 화면 업데이트
             document.getElementById('netPayResult').innerText = netPay.toLocaleString() + '원';
             document.getElementById('deductResult').innerText = '-' + totalDeduct.toLocaleString() + '원';
+
+            // 💡 [핵심 연동] 실수령액 결과를 1억 모으기 플랜의 '월급'칸에 자동 입력!
+            document.getElementById('app100m_s').value = netPay.toLocaleString();
+            calc100m(); // 플랜 계산기 동시 업데이트
         }
 
+        // ✨ 1억 모으기 플랜 계산
+        function calc100m() {
+            let salaryStr = document.getElementById('app100m_s').value;
+            let livingStr = document.getElementById('app100m_l').value;
+            let invRatio = Number(document.getElementById('app100m_ir').value) || 0;
+            let coinRatio = Number(document.getElementById('app100m_cr').value) || 0;
+
+            let salary = salaryStr ? raw(salaryStr) : 0;
+            let living = livingStr ? raw(livingStr) : 0;
+            
+            const fixedIns = 90000;
+            const fixedDues = 50000;
+            const fixedSav = 150000;
+            const totalFixed = fixedIns + fixedDues + fixedSav;
+
+            // 투자 가능 금액 = 월급 - 생활비 - 고정비용
+            let investable = salary - living - totalFixed;
+            if (investable < 0) investable = 0;
+
+            let invAmt = Math.floor(investable * (invRatio / 100));
+            let coinAmt = Math.floor(investable * (coinRatio / 100));
+
+            document.getElementById('app100m_rt').innerText = investable.toLocaleString() + '원';
+            document.getElementById('app100m_ri').innerText = invAmt.toLocaleString() + '원';
+            document.getElementById('app100m_rc').innerText = coinAmt.toLocaleString() + '원';
+        }
+
+        // --- 기존 차트 및 동기화 로직 ---
         function adjustPlaceholder() {
             const cat = document.getElementById('assetCat').value;
             const nameInput = document.getElementById('newName');
             const valInput = document.getElementById('newVal');
-            if (cat === '주식' || cat === '코인') {
-                nameInput.placeholder = "Ticker (예: VOO)";
-                valInput.placeholder = "보유 수량";
-            } else {
-                nameInput.placeholder = "명칭 (예: 카카오뱅크)";
-                valInput.placeholder = "현재 금액";
-            }
+            if (cat === '주식' || cat === '코인') { nameInput.placeholder = "Ticker (예: VOO)"; valInput.placeholder = "보유 수량"; } 
+            else { nameInput.placeholder = "명칭 (예: 카카오뱅크)"; valInput.placeholder = "현재 금액"; }
         }
 
         function setChartType(t, btn) {
@@ -253,11 +330,8 @@
         function closeGoalM() { document.getElementById('goalModal').style.display='none'; }
         function saveGoal() {
             const val = raw(document.getElementById('goalInput').value);
-            if(val > 0) {
-                GOAL = val;
-                localStorage.setItem('my_target_goal', GOAL);
-                render(); closeGoalM();
-            } else alert("금액을 입력해주세요.");
+            if(val > 0) { GOAL = val; localStorage.setItem('my_target_goal', GOAL); render(); closeGoalM(); } 
+            else alert("금액을 입력해주세요.");
         }
 
         function sortData() {
@@ -351,7 +425,7 @@
             const item = data[i];
             const isMarket = (item.cat === '주식' || item.cat === '코인');
             document.getElementById('mTitle').innerText = item.name; 
-            document.getElementById('mCurrentInfo').innerText = `현재 보유량: ${(isMarket ? item.qty : item.amount).toLocaleString()}${isMarket ? (item.cat==='주식'?'주':'개') : '원'}`;
+            document.getElementById('mCurrentInfo').innerText = `현재: ${(isMarket ? item.qty : item.amount).toLocaleString()}${isMarket ? (item.cat==='주식'?'주':'개') : '원'}`;
             document.getElementById('modal').style.display='flex'; 
         }
         function closeM() { document.getElementById('modal').style.display='none'; document.getElementById('mInput').value = ''; }
@@ -360,9 +434,7 @@
             if(v === undefined || v === '') return;
             const isMarket = (data[selIdx].cat === '주식' || data[selIdx].cat === '코인');
             let current = isMarket ? data[selIdx].qty : data[selIdx].amount;
-            if (t === 'set') current = v; 
-            else if (t === 'buy') current += v; 
-            else if (t === 'sell') current -= v; 
+            if (t === 'set') current = v; else if (t === 'buy') current += v; else if (t === 'sell') current -= v; 
             if (current < 0) current = 0; 
             if(isMarket) data[selIdx].qty = current; else data[selIdx].amount = current;
             save(); closeM();
@@ -392,13 +464,9 @@
                         if(match && match[1]) item.amount = item.qty * parseFloat(match[1]) * rate;
                     }
                 });
-                save(); 
-                toast.innerText = `✅ 업데이트 완료!`;
+                save(); toast.innerText = `✅ 업데이트 완료!`;
                 setTimeout(() => { toast.style.display = 'none'; }, 2000);
-            } catch(e) { 
-                toast.innerText = `❌ 연결 실패`;
-                setTimeout(() => { toast.style.display = 'none'; }, 2500);
-            } 
+            } catch(e) { toast.innerText = `❌ 연결 실패`; setTimeout(() => { toast.style.display = 'none'; }, 2500); } 
         }
 
         let touchStartY = 0;
@@ -422,4 +490,3 @@
     </script>
 </body>
 </html>
-
