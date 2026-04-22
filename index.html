@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="자산관리">
-    <title>자산 관리 v3.8</title>
+    <title>자산 관리 v3.9</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
     <style>
@@ -111,6 +111,30 @@
     <div id="list" class="card"></div>
 
     <div class="card">
+        <div style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">💸 실수령액 계산기</div>
+        <div class="input-group">
+            <div class="input-row">
+                <select id="salaryType" onchange="calcSalary()" style="flex: 0.4;">
+                    <option value="연봉">연봉</option>
+                    <option value="월급">월급</option>
+                </select>
+                <input type="text" id="salaryInput" placeholder="세전 금액 (예: 50,000,000)" oninput="comma(this); calcSalary();" style="flex: 1;">
+            </div>
+            <input type="text" id="nonTaxable" placeholder="비과세액 (기본 20만원 적용)" oninput="comma(this); calcSalary();">
+        </div>
+        <div style="margin-top: 15px; border-top: 1px solid #E5E5EA; padding-top: 15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                <span style="font-size: 14px; color: var(--text-sub);">예상 월 실수령액</span>
+                <span id="netPayResult" style="font-size: 20px; font-weight: 800; color: var(--toss-blue);">0원</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size: 12px; color: var(--text-sub);">공제액 합계 (4대보험+세금 약식)</span>
+                <span id="deductResult" style="font-size: 13px; font-weight: 600; color: var(--toss-red);">0원</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
         <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">구글 시트 연동</div>
         <div class="sync-row">
             <input type="text" id="csvUrl" placeholder="CSV URL 입력">
@@ -157,6 +181,47 @@
         }
         function raw(v) { return Number(v.replace(/,/g, '')); }
 
+        // ✨ 실수령액 계산 로직 추가
+        function calcSalary() {
+            let type = document.getElementById('salaryType').value;
+            let amountVal = document.getElementById('salaryInput').value;
+            let amount = amountVal ? raw(amountVal) : 0;
+            let nonTaxVal = document.getElementById('nonTaxable').value;
+            let nonTax = nonTaxVal ? raw(nonTaxVal) : 200000; // 기본 비과세 20만원
+
+            if (amount === 0) {
+                document.getElementById('netPayResult').innerText = '0원';
+                document.getElementById('deductResult').innerText = '0원';
+                return;
+            }
+
+            let monthlyGross = type === '연봉' ? Math.floor(amount / 12) : amount;
+            let taxable = Math.max(0, monthlyGross - nonTax);
+
+            // 4대보험 계산 (최근 요율 기준)
+            let pension = Math.min(Math.floor(taxable * 0.045 / 10) * 10, 265500); // 연금 4.5% (상한액 265,500원 적용)
+            let health = Math.floor(taxable * 0.03545 / 10) * 10; // 건보 3.545%
+            let care = Math.floor(health * 0.1295 / 10) * 10; // 장기요양 12.95%
+            let employ = Math.floor(taxable * 0.009 / 10) * 10; // 고용 0.9%
+
+            // 근로소득세 약식 계산 (단순화된 구간 적용)
+            let incomeTax = 0;
+            if (monthlyGross > 1060000) {
+                if(monthlyGross <= 3000000) incomeTax = Math.floor(taxable * 0.03);
+                else if(monthlyGross <= 5000000) incomeTax = Math.floor(taxable * 0.05);
+                else if(monthlyGross <= 10000000) incomeTax = Math.floor(taxable * 0.08);
+                else incomeTax = Math.floor(taxable * 0.12);
+            }
+            let localTax = Math.floor(incomeTax * 0.1);
+
+            let totalDeduct = pension + health + care + employ + incomeTax + localTax;
+            let netPay = monthlyGross - totalDeduct;
+
+            // 결과 화면 업데이트
+            document.getElementById('netPayResult').innerText = netPay.toLocaleString() + '원';
+            document.getElementById('deductResult').innerText = '-' + totalDeduct.toLocaleString() + '원';
+        }
+
         function adjustPlaceholder() {
             const cat = document.getElementById('assetCat').value;
             const nameInput = document.getElementById('newName');
@@ -184,7 +249,6 @@
             return v.toLocaleString();
         }
 
-        // 목표 모달 열기/닫기
         function openGoalM() { document.getElementById('goalInput').value = GOAL.toLocaleString(); document.getElementById('goalModal').style.display='flex'; }
         function closeGoalM() { document.getElementById('goalModal').style.display='none'; }
         function saveGoal() {
@@ -211,7 +275,6 @@
             let total = 0;
             data.forEach(item => total += (item.amount || 0));
 
-            // 💡 원형 차오름 렌더링
             const shortTxt = formatShortMoney(GOAL);
             document.getElementById('goalCenterTxt').innerText = shortTxt;
             
@@ -359,3 +422,4 @@
     </script>
 </body>
 </html>
+
