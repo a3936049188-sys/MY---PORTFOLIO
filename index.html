@@ -1,57 +1,361 @@
-<div class="card" style="margin-bottom: 20px;">
-  <h2>💰 1억 모으기 플랜</h2>
-  
-  <div class="input-group">
-    <label>이번 달 월급</label>
-    <input type="tel" id="app100m_s" placeholder="예: 3,000,000">
-  </div>
-  
-  <div class="input-group">
-    <label>사용할 생활비</label>
-    <input type="tel" id="app100m_l" placeholder="예: 1,000,000">
-  </div>
-  
-  <div style="display: flex; gap: 15px;">
-    <div class="input-group" style="flex:1;">
-      <label>일반투자 비율(%)</label>
-      <input type="tel" id="app100m_ir" value="80">
-    </div>
-    <div class="input-group" style="flex:1;">
-      <label>코인 비율(%)</label>
-      <input type="tel" id="app100m_cr" value="20">
-    </div>
-  </div>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="자산관리">
+    <title>자산 관리 v3.8</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <style>
+        :root { --bg-color: #F2F2F7; --card-bg: #FFFFFF; --text-main: #000000; --text-sub: #8E8E93; --toss-blue: #007AFF; --toss-red: #FF3B30; --success-green: #34C759; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); margin: 0; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom) 16px; color: var(--text-main); display: flex; flex-direction: column; }
+        .header { margin: 20px 0; }
+        .header h1 { font-size: 28px; font-weight: 700; margin: 0; }
+        
+        .card { background-color: var(--card-bg); border-radius: 18px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        
+        .segment-control { display: flex; background-color: #E5E5EA; border-radius: 8px; padding: 2px; margin-bottom: 15px; }
+        .segment-btn { flex: 1; text-align: center; padding: 8px 0; font-size: 14px; font-weight: 600; color: var(--text-sub); border-radius: 6px; cursor: pointer; }
+        .segment-btn.active { background-color: #FFFFFF; color: var(--text-main); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
-  <div class="res-box">
-    <div class="res-item">
-      <span>🛡️ 보험 (고정)</span>
-      <span class="amt fixed">- 90,000원</span>
+        #syncToast { display: none; position: fixed; top: env(safe-area-inset-top, 20px); left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 12px 24px; border-radius: 20px; font-size: 14px; font-weight: bold; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: 0.3s; }
+
+        /* 💡 원형 목표 차오름 디자인 */
+        .chart-container { position: relative; height: 220px; display: flex; align-items: center; justify-content: center; }
+        .goal-container { display: none; flex-direction: column; align-items: center; justify-content: center; height: 220px; position: relative; }
+        
+        .goal-circle-bg { width: 160px; height: 160px; border-radius: 50%; background: #E5E5EA; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
+        .goal-water { position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: var(--toss-blue); transition: height 1.2s cubic-bezier(0.17, 0.67, 0.83, 0.67); }
+        .goal-text-overlay { position: relative; z-index: 2; font-size: 40px; font-weight: 900; color: var(--text-main); letter-spacing: -1.5px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+        .input-row { display: flex; gap: 8px; flex-wrap: wrap; } 
+        input, select { height: 48px; border-radius: 12px; border: 1px solid #D1D1D6; padding: 0 12px; font-size: 16px; background-color: #FAFAFA; outline: none; flex: 1 1 45%; min-width: 130px; }
+        .add-btn { height: 50px; background-color: var(--toss-blue); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; width: 100%; }
+
+        .asset-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 0.5px solid #E5E5EA; gap: 10px; }
+        .item-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; } 
+        .color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .item-info { min-width: 0; flex: 1; }
+        .item-name { font-size: 16px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+        .item-cat { font-size: 12px; color: var(--text-sub); }
+        .item-right { text-align: right; flex-shrink: 0; }
+        .item-amount { font-size: 16px; font-weight: 600; display: block; }
+        .item-percent { font-size: 11px; color: var(--toss-blue); font-weight: 600; }
+
+        .sync-row { display: flex; gap: 8px; margin-top: 8px; }
+        .sync-btn { flex: 1; height: 40px; background-color: var(--success-green); color: white; border: none; border-radius: 10px; font-weight: 600; min-width: 80px; }
+
+        /* 모달 공통 스타일 */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal { background: #fff; width: 90%; max-width: 340px; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .modal-btn-row { display: flex; gap: 8px; }
+        .modal-btn { flex: 1; height: 50px; border: none; border-radius: 12px; font-weight: bold; color: white; font-size: 15px; }
+        
+        #pullIndicator { text-align: center; font-size: 12px; color: var(--text-sub); height: 0; overflow: hidden; transition: 0.2s; }
+    </style>
+</head>
+<body>
+
+    <div id="syncToast">⏳ 동기화 진행 중...</div>
+    <div id="pullIndicator">↓ 위에서 아래로 당겨서 동기화 ↓</div>
+
+    <div class="header"><h1>자산 현황</h1></div>
+
+    <div class="card">
+        <div class="segment-control">
+            <div class="segment-btn active" onclick="setChartType('pie', this)">비율</div>
+            <div class="segment-btn" onclick="setChartType('goal', this)">💰 목표 달성률</div>
+        </div>
+        
+        <div class="chart-container" id="chartArea"><canvas id="portfolioChart"></canvas></div>
+        
+        <div class="goal-container" id="goalArea">
+            <button onclick="openGoalM()" style="position: absolute; top: -10px; right: 0; background: #F2F2F7; border: none; padding: 6px 12px; border-radius: 10px; font-size: 12px; font-weight: bold; color: var(--text-sub);">⚙️ 목표 변경</button>
+            
+            <div class="goal-circle-bg">
+                <div class="goal-water" id="goalWater"></div>
+                <div class="goal-text-overlay" id="goalCenterTxt">1억</div>
+            </div>
+
+            <div id="goalPercent" style="font-size: 24px; font-weight: 800; color: var(--toss-blue); margin-top: 15px;">0.0%</div>
+            <div id="goalRemain" style="font-size: 13px; color: var(--text-sub);">계산 중...</div>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:15px; border-top:1px solid #F2F2F7; padding-top:15px;">
+            <div style="font-size:12px; color:var(--text-sub);" id="rateInfo">환율: 미동기화</div>
+            <div id="totalAmount" style="font-size: 22px; font-weight: 800; color: var(--toss-blue);">0원</div>
+        </div>
     </div>
-    <div class="res-item">
-      <span>👥 회비 (고정)</span>
-      <span class="amt fixed">- 50,000원</span>
+
+    <div class="card">
+        <div class="input-group">
+            <select id="assetCat" onchange="adjustPlaceholder()">
+                <option value="주식">📈 주식 (Ticker)</option>
+                <option value="코인">🪙 코인 (Ticker)</option>
+                <option value="현금">💵 현금 (금액)</option>
+                <option value="적금">🏦 적금 (금액)</option>
+            </select>
+            <div class="input-row">
+                <input type="text" id="newName" placeholder="예: VOO">
+                <input type="text" id="newVal" placeholder="수량 또는 금액" oninput="comma(this)">
+            </div>
+            <button class="add-btn" onclick="add()">리스트에 등록하기</button>
+        </div>
     </div>
-    <div class="res-item">
-      <span>🏦 저축 (청약)</span>
-      <span class="amt fixed">- 150,000원</span>
+
+    <div id="list" class="card"></div>
+
+    <div class="card">
+        <div style="font-size: 12px; color: var(--text-sub); margin-bottom: 5px;">구글 시트 연동</div>
+        <div class="sync-row">
+            <input type="text" id="csvUrl" placeholder="CSV URL 입력">
+            <button class="sync-btn" onclick="sync(false)">동기화</button>
+        </div>
     </div>
-    
-    <div class="calc-divider"></div>
-    
-    <div class="res-item">
-      <span>🏢 일반 투자</span>
-      <span class="amt" id="app100m_ri">0원</span>
+
+    <div id="modal" class="modal-overlay">
+        <div class="modal">
+            <div id="mTitle" style="font-weight:700; text-align:center; font-size: 20px;">자산명</div>
+            <div id="mCurrentInfo" style="text-align:center; font-size:14px; color:var(--text-sub);">현재: 0</div>
+            <input type="text" id="mInput" placeholder="수량/금액 입력" oninput="comma(this)">
+            <div class="modal-btn-row">
+                <button class="modal-btn" style="background:#E5E5EA; color:black; flex:1.5;" onclick="trade('set')">변경 (=)</button>
+            </div>
+            <div class="modal-btn-row">
+                <button class="modal-btn" style="background:var(--toss-red);" onclick="trade('sell')">빼기 (-)</button>
+                <button class="modal-btn" style="background:var(--toss-blue);" onclick="trade('buy')">더하기 (+)</button>
+            </div>
+            <button onclick="del()" style="border:none; color:var(--toss-red); background:none; padding:10px;">삭제</button>
+            <button onclick="closeM()" style="border:none; color:var(--text-sub); background:none;">닫기</button>
+        </div>
     </div>
-    <div class="res-item">
-      <span>🪙 코인 투자</span>
-      <span class="amt" id="app100m_rc">0원</span>
+
+    <div id="goalModal" class="modal-overlay">
+        <div class="modal">
+            <div style="font-weight:700; text-align:center; font-size: 20px;">목표 금액 설정</div>
+            <div style="font-size:13px; color:var(--text-sub); text-align:center;">원하는 목표 금액을 숫자로 입력하세요.</div>
+            <input type="text" id="goalInput" placeholder="예: 100,000,000" oninput="comma(this)">
+            <button class="modal-btn" style="background:var(--toss-blue);" onclick="saveGoal()">저장하기</button>
+            <button onclick="closeGoalM()" style="border:none; color:var(--text-sub); background:none;">취소</button>
+        </div>
     </div>
-    
-    <div class="calc-divider"></div>
-    
-    <div class="res-item total-invest">
-      <span>🔥 투자 가능 금액</span>
-      <span class="amt total-amt" id="app100m_rt">0원</span>
-    </div>
-  </div>
-</div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+        let data = JSON.parse(localStorage.getItem('assets_v5')) || [];
+        let chart = null, selIdx = -1, rate = 1380;
+        let GOAL = Number(localStorage.getItem('my_target_goal')) || 100000000;
+
+        function comma(el) { 
+            let v = el.value.replace(/[^0-9.]/g, ''); 
+            if(v) el.value = Number(v.split('.')[0]).toLocaleString() + (v.includes('.') ? '.' + v.split('.')[1] : '');
+        }
+        function raw(v) { return Number(v.replace(/,/g, '')); }
+
+        function adjustPlaceholder() {
+            const cat = document.getElementById('assetCat').value;
+            const nameInput = document.getElementById('newName');
+            const valInput = document.getElementById('newVal');
+            if (cat === '주식' || cat === '코인') {
+                nameInput.placeholder = "Ticker (예: VOO)";
+                valInput.placeholder = "보유 수량";
+            } else {
+                nameInput.placeholder = "명칭 (예: 카카오뱅크)";
+                valInput.placeholder = "현재 금액";
+            }
+        }
+
+        function setChartType(t, btn) {
+            document.querySelectorAll('.segment-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('chartArea').style.display = t === 'pie' ? 'flex' : 'none';
+            document.getElementById('goalArea').style.display = t === 'goal' ? 'flex' : 'none';
+            render();
+        }
+
+        function formatShortMoney(v) {
+            if (v >= 100000000) return (v / 100000000).toLocaleString(undefined, {maximumFractionDigits: 2}) + "억";
+            if (v >= 10000) return (v / 10000).toLocaleString(undefined, {maximumFractionDigits: 0}) + "만";
+            return v.toLocaleString();
+        }
+
+        // 목표 모달 열기/닫기
+        function openGoalM() { document.getElementById('goalInput').value = GOAL.toLocaleString(); document.getElementById('goalModal').style.display='flex'; }
+        function closeGoalM() { document.getElementById('goalModal').style.display='none'; }
+        function saveGoal() {
+            const val = raw(document.getElementById('goalInput').value);
+            if(val > 0) {
+                GOAL = val;
+                localStorage.setItem('my_target_goal', GOAL);
+                render(); closeGoalM();
+            } else alert("금액을 입력해주세요.");
+        }
+
+        function sortData() {
+            const order = { '주식': 1, '코인': 2, '적금': 3, '현금': 4 };
+            data.sort((a, b) => {
+                if (order[a.cat] !== order[b.cat]) return order[a.cat] - order[b.cat];
+                return b.amount - a.amount;
+            });
+        }
+
+        function render() {
+            sortData(); 
+            const listEl = document.getElementById('list');
+            listEl.innerHTML = '';
+            let total = 0;
+            data.forEach(item => total += (item.amount || 0));
+
+            // 💡 원형 차오름 렌더링
+            const shortTxt = formatShortMoney(GOAL);
+            document.getElementById('goalCenterTxt').innerText = shortTxt;
+            
+            let p = Math.min((total / GOAL) * 100, 100);
+            document.getElementById('goalWater').style.height = p + '%';
+            document.getElementById('goalPercent').innerText = p.toFixed(1) + '%';
+            document.getElementById('goalRemain').innerText = total >= GOAL ? "🎉 목표 달성!" : `${(GOAL-total).toLocaleString()}원 남음`;
+
+            const labels = [], values = [], colors = [];
+            data.forEach((item, i) => {
+                const c = ["#007AFF", "#5856D6", "#AF52DE", "#FF2D55", "#FF9500", "#34C759", "#32ADE6"][i % 7];
+                labels.push(item.name); values.push(item.amount); colors.push(c);
+                const isMarket = (item.cat === '주식' || item.cat === '코인');
+                listEl.innerHTML += `
+                    <div class="asset-item" onclick="openM(${i})">
+                        <div class="item-left">
+                            <div class="color-dot" style="background:${c}"></div>
+                            <div class="item-info">
+                                <span class="item-name">${item.name}</span>
+                                <span class="item-cat">${isMarket ? item.cat + ' · ' + item.qty.toLocaleString() + (item.cat==='주식'?'주':'개') : item.cat}</span>
+                            </div>
+                        </div>
+                        <div class="item-right">
+                            <span class="item-amount">${Math.floor(item.amount).toLocaleString()}원</span>
+                            <span class="item-percent">${total>0?(item.amount/total*100).toFixed(1):0}%</span>
+                        </div>
+                    </div>`;
+            });
+
+            document.getElementById('totalAmount').innerText = Math.floor(total).toLocaleString() + '원';
+            
+            if(chart) chart.destroy();
+            if(values.length > 0) {
+                chart = new Chart(document.getElementById('portfolioChart'), {
+                    type: 'pie',
+                    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 1, borderColor: '#fff' }] },
+                    options: { 
+                        layout: { padding: { left: 0, right: 10 } },
+                        plugins: { 
+                            legend: { 
+                                display: true, position: 'right',
+                                labels: {
+                                    boxWidth: 12, font: { size: 11, family: '-apple-system' },
+                                    generateLabels: (chart) => {
+                                        const ds = chart.data.datasets[0];
+                                        return chart.data.labels.map((label, i) => {
+                                            const val = ds.data[i];
+                                            const pct = total > 0 ? (val / total * 100).toFixed(1) + '%' : '0%';
+                                            return { text: `${label} (${pct})`, fillStyle: ds.backgroundColor[i], index: i };
+                                        });
+                                    }
+                                }
+                            }, 
+                            datalabels: { display: false } 
+                        }, maintainAspectRatio: false
+                    }
+                });
+            }
+        }
+
+        function add() {
+            const name = document.getElementById('newName').value.trim().toUpperCase();
+            const val = raw(document.getElementById('newVal').value);
+            if(!name || !val) return alert("자산명과 수량을 입력해주세요.");
+            const cat = document.getElementById('assetCat').value;
+            const isMarket = (cat === '주식' || cat === '코인');
+            data.push({ cat, name, qty: isMarket ? val : 0, amount: isMarket ? 0 : val });
+            save();
+            document.getElementById('newName').value = ''; document.getElementById('newVal').value = '';
+        }
+
+        function openM(i) { 
+            selIdx = i; 
+            const item = data[i];
+            const isMarket = (item.cat === '주식' || item.cat === '코인');
+            document.getElementById('mTitle').innerText = item.name; 
+            document.getElementById('mCurrentInfo').innerText = `현재 보유량: ${(isMarket ? item.qty : item.amount).toLocaleString()}${isMarket ? (item.cat==='주식'?'주':'개') : '원'}`;
+            document.getElementById('modal').style.display='flex'; 
+        }
+        function closeM() { document.getElementById('modal').style.display='none'; document.getElementById('mInput').value = ''; }
+        function trade(t) {
+            const v = raw(document.getElementById('mInput').value);
+            if(v === undefined || v === '') return;
+            const isMarket = (data[selIdx].cat === '주식' || data[selIdx].cat === '코인');
+            let current = isMarket ? data[selIdx].qty : data[selIdx].amount;
+            if (t === 'set') current = v; 
+            else if (t === 'buy') current += v; 
+            else if (t === 'sell') current -= v; 
+            if (current < 0) current = 0; 
+            if(isMarket) data[selIdx].qty = current; else data[selIdx].amount = current;
+            save(); closeM();
+        }
+
+        function del() { if(confirm('삭제할까요?')) { data.splice(selIdx, 1); save(); closeM(); } }
+        function save() { localStorage.setItem('assets_v5', JSON.stringify(data)); render(); }
+
+        async function sync(isAuto = false) {
+            const url = document.getElementById('csvUrl').value.trim();
+            if(!url) return;
+            const toast = document.getElementById('syncToast');
+            toast.style.display = 'block';
+            localStorage.setItem('csv_url', url);
+            try {
+                const fetchUrl = url + (url.includes('?') ? '&' : '?') + 't=' + new Date().getTime();
+                const res = await fetch(fetchUrl);
+                const text = await res.text();
+                const rows = text.split(/\r?\n/).map(r => r.split(',').map(c => c.replace(/"/g, '').trim()));
+                const rRow = rows.find(r => r[0] && r[0].toUpperCase() === 'EXCHANGE_RATE');
+                if(rRow && rRow[1]) rate = parseFloat(rRow[1]);
+                document.getElementById('rateInfo').innerText = `환율: ${rate.toLocaleString()}원`;
+                data.forEach(item => {
+                    const isMarket = (item.cat === '주식' || item.cat === '코인');
+                    if(isMarket) {
+                        const match = rows.find(r => r[0] && r[0].toUpperCase() === item.name);
+                        if(match && match[1]) item.amount = item.qty * parseFloat(match[1]) * rate;
+                    }
+                });
+                save(); 
+                toast.innerText = `✅ 업데이트 완료!`;
+                setTimeout(() => { toast.style.display = 'none'; }, 2000);
+            } catch(e) { 
+                toast.innerText = `❌ 연결 실패`;
+                setTimeout(() => { toast.style.display = 'none'; }, 2500);
+            } 
+        }
+
+        let touchStartY = 0;
+        document.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, {passive: true});
+        document.addEventListener('touchmove', e => {
+            if(window.scrollY === 0) {
+                const pullDistance = e.touches[0].clientY - touchStartY;
+                if(pullDistance > 50) document.getElementById('pullIndicator').style.height = '30px'; 
+            }
+        }, {passive: true});
+        document.addEventListener('touchend', e => {
+            document.getElementById('pullIndicator').style.height = '0'; 
+            if (window.scrollY === 0 && (e.changedTouches[0].clientY - touchStartY > 100)) sync(false);
+        });
+
+        window.onload = () => {
+            const savedUrl = localStorage.getItem('csv_url');
+            if(savedUrl) { document.getElementById('csvUrl').value = savedUrl; sync(true); }
+            adjustPlaceholder(); render();
+        };
+    </script>
+</body>
+</html>
