@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+
+# 수정된 HTML 파일 생성
+html_content = '''<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -52,7 +54,7 @@
         .nav-item.active { color: var(--text-main); font-weight: 700; }
         .nav-icon { font-size: 20px; filter: grayscale(100%) opacity(0.5); transition: 0.2s; }
         .nav-item.active .nav-icon { filter: grayscale(0%) opacity(1); transform: scale(1.1); }
-
+        
         .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-weight: 700; font-size: 16px; }
         .cal-btn { background: #E5E5EA; border: none; border-radius: 8px; width: 28px; height: 28px; font-weight: bold; cursor: pointer; color: var(--text-main); }
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: 13px; }
@@ -69,13 +71,13 @@
         .filter-bar::-webkit-scrollbar { display: none; }
         .filter-chip { padding: 6px 14px; border-radius: 16px; border: 1px solid #E5E5EA; background: #fff; font-size: 13px; font-weight: 600; white-space: nowrap; cursor: pointer; color: var(--text-sub); transition: 0.2s; }
         .filter-chip.active { background: var(--text-main); color: #fff; border-color: var(--text-main); }
-
+        
         .diary-card { margin-bottom: 12px; background: #fff; padding: 16px; border-radius: 16px; border: 1px solid #E5E5EA; position: relative; }
         .diary-star { position: absolute; right: 16px; top: 16px; font-size: 20px; cursor: pointer; transition: 0.2s; }
         .diary-star.filled { color: #FFD60A; text-shadow: 0 0 5px rgba(255, 214, 10, 0.4); }
         .diary-star.empty { color: #E5E5EA; }
         .diary-edit-btn { font-size: 12px; color: var(--toss-blue); cursor: pointer; background: #F2F2F7; padding: 4px 10px; border-radius: 6px; margin-right: 8px; }
-
+        
         .category-section { margin-bottom: 20px; }
         .category-header { font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; padding: 10px 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
         .category-header:hover { background: #F9F9F9; }
@@ -85,13 +87,13 @@
         .category-items { overflow: hidden; transition: max-height 0.3s ease; }
         .category-items.collapsed { max-height: 0; }
         .category-items.expanded { max-height: 2000px; }
-
+        
         .ratio-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
         .ratio-item input { flex: 2; }
         .ratio-item input[type="tel"] { flex: 1; text-align: center; }
         .ratio-remove-btn { background: #FF3B30; color: white; border: none; border-radius: 8px; padding: 8px 12px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0; }
         .add-ratio-btn { background: #E5E5EA; color: var(--text-main); border: none; border-radius: 10px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 8px; }
-
+        
         .portfolio-snapshot { background: #F9F9F9; border-radius: 12px; padding: 12px; margin-top: 12px; border: 1px solid #E5E5EA; }
         .portfolio-snapshot-title { font-size: 12px; color: var(--text-sub); margin-bottom: 8px; font-weight: 600; }
         .portfolio-snapshot-item { font-size: 11px; color: var(--text-main); margin-bottom: 4px; display: flex; justify-content: space-between; }
@@ -168,13 +170,13 @@
             <div class="input-group"><div style="font-size: 13px; color: var(--text-sub); margin-bottom: -5px;">이번 달 실수령액</div><input type="tel" inputmode="decimal" id="plan_s" placeholder="예: 3,000,000" oninput="formatNum(this); calcPlan();"></div>
             <div class="input-group"><div style="font-size: 13px; color: var(--text-sub); margin-bottom: -5px;">사용할 생활비</div><input type="tel" inputmode="decimal" id="plan_l" placeholder="예: 1,000,000" oninput="formatNum(this); calcPlan();"></div>
             <div class="input-group"><div style="font-size: 13px; color: var(--text-sub); margin-bottom: -5px;">고정 지출 (보험/회비/청약 등)</div><input type="tel" inputmode="decimal" id="plan_fixed" value="290,000" placeholder="예: 290,000" oninput="formatNum(this); calcPlan();"></div>
-
+            
             <div style="margin-top: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 14px; font-weight: 600;">투자 비율 설정</span>
             </div>
             <div id="ratioContainer"></div>
             <button class="add-ratio-btn" onclick="addRatio()">➕ 투자 항목 추가</button>
-
+            
             <div style="background-color: #FAFAFA; border-radius: 14px; padding: 16px; margin-top: 15px; border: 1px solid #E5E5EA;">
                 <div style="display:flex; justify-content:space-between; margin-bottom: 8px;"><span style="font-size: 13px; color: var(--text-sub);">🛡️ 고정 지출</span><span style="font-size: 13px; font-weight: 500;" id="plan_fixed_display">-290,000원</span></div>
                 <div style="height: 1px; background-color: #D1D1D6; margin: 12px 0;"></div>
@@ -189,9 +191,9 @@
             <div style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">📊 구글 시트 데이터 연동</div>
             <div style="font-size: 13px; color: var(--text-sub); margin-bottom: 10px;">포트폴리오 주가 데이터를 읽어옵니다.</div>
             <div class="sync-row" style="margin-bottom: 15px;"><input type="text" id="csvUrl" placeholder="https://docs.google.com/spreadsheets/d/..."><button class="sync-btn" onclick="syncData()">동기화</button></div>
-
+            
             <div style="height: 1px; background-color: #E5E5EA; margin: 20px 0;"></div>
-
+            
             <div style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">☁️ 일기 구글 시트 백업 설정</div>
             <div style="font-size: 13px; color: var(--text-sub); margin-bottom: 10px;">Apps Script 웹 앱 URL을 입력하면 일기를 쓸 때마다 시트에 자동 저장됩니다.</div>
             <div class="sync-row"><input type="text" id="diaryApiUrl" placeholder="https://script.google.com/macros/s/..."><button class="sync-btn" style="background:var(--toss-blue);" onclick="saveDiaryApi()">저장</button></div>
@@ -225,7 +227,7 @@
         let chart = null, selIdx = -1, rate = 1380, chartType = 'pie';
         let GOAL = Number(localStorage.getItem('my_goal_v10')) || 100000000;
         let DIARY_API_URL = localStorage.getItem('my_diary_api') || '';
-
+        
         let currentMood = 'bull', filterMode = 'all', filterDate = null;
         const today = new Date(); let calYear = today.getFullYear(), calMonth = today.getMonth();
         let selectedDiaryDate = null;
@@ -276,20 +278,20 @@
         function updateRatioName(idx, val) { investRatios[idx].name = val; saveRatios(); calcPlan(); }
         function updateRatioPercent(idx, val) { investRatios[idx].ratio = getRawNum(val); saveRatios(); calcPlan(); }
         function saveRatios() { localStorage.setItem('my_invest_ratios', JSON.stringify(investRatios)); }
-
+        
         function calcPlan() { 
             const salary = getRawNum(document.getElementById('plan_s').value);
             const living = getRawNum(document.getElementById('plan_l').value);
             const fixed = getRawNum(document.getElementById('plan_fixed').value);
             const investable = Math.max(0, salary - living - fixed);
-
+            
             document.getElementById('plan_fixed_display').innerText = '-' + fixed.toLocaleString() + '원';
             document.getElementById('plan_rt').innerText = investable.toLocaleString() + '원';
-
+            
             const totalRatio = investRatios.reduce((sum, item) => sum + item.ratio, 0);
             const resultsDiv = document.getElementById('ratioResults');
             resultsDiv.innerHTML = '';
-
+            
             investRatios.forEach(item => {
                 const amount = totalRatio > 0 ? Math.floor(investable * (item.ratio / totalRatio)) : 0;
                 const div = document.createElement('div');
@@ -314,7 +316,7 @@
             if(selectedDiaryDate) {
                 const { y, m, d } = selectedDiaryDate;
                 label.innerText = `${y}.${String(m).padStart(2,'0')}.${String(d).padStart(2,'0')}`;
-
+                
                 const existingEntry = diaryData.find(e => e.yyyy === y && e.mm === m && e.dd === d);
                 if(existingEntry) {
                     editingDiaryId = existingEntry.id;
@@ -337,18 +339,18 @@
         function getPortfolioSnapshot() {
             const snapshot = { total: 0, items: [] };
             const categoryTotals = {};
-
+            
             data.forEach(item => {
                 if(!categoryTotals[item.cat]) categoryTotals[item.cat] = 0;
                 categoryTotals[item.cat] += item.amount || 0;
                 snapshot.total += item.amount || 0;
             });
-
+            
             snapshot.items = Object.entries(categoryTotals).map(([cat, amount]) => ({
                 category: cat,
                 amount: amount
             }));
-
+            
             return snapshot;
         }
 
@@ -356,7 +358,7 @@
             const content = document.getElementById('diaryContent').value.trim();
             if(!content) return showToast("일기 내용을 입력해주세요.");
             const isImportant = document.getElementById('diaryImportant').checked;
-
+            
             let yy, mm, dd;
             if(selectedDiaryDate) {
                 yy = selectedDiaryDate.y;
@@ -368,14 +370,14 @@
                 mm = now.getMonth() + 1;
                 dd = now.getDate();
             }
-
+            
             const dateStr = `${yy}.${String(mm).padStart(2,'0')}.${String(dd).padStart(2,'0')}`;
             const moodEmoji = currentMood === 'bull' ? '🐂 강세' : (currentMood === 'bear' ? '🐻 약세' : '🤔 관망');
-
+            
             const portfolio = getPortfolioSnapshot();
-
+            
             diaryData = diaryData.filter(e => !(e.yyyy === yy && e.mm === mm && e.dd === dd));
-
+            
             diaryData.unshift({ 
                 id: editingDiaryId || Date.now(), 
                 yyyy: yy, 
@@ -387,9 +389,9 @@
                 isImportant: isImportant,
                 portfolio: portfolio
             });
-
+            
             localStorage.setItem('my_diary_v13', JSON.stringify(diaryData));
-
+            
             document.getElementById('diaryContent').value = ''; 
             document.getElementById('diaryImportant').checked = false;
             selectedDiaryDate = null;
@@ -397,7 +399,7 @@
             updateDiaryFormLabel();
             renderCalendar(); 
             renderDiary();
-
+            
             // 구글 시트 백업 (CORS 모드 수정)
             if(DIARY_API_URL) {
                 const params = new URLSearchParams();
@@ -407,7 +409,7 @@
                 params.append('content', content);
                 params.append('total_amount', portfolio.total.toLocaleString() + '원');
                 params.append('portfolio_detail', portfolio.items.map(i => `${i.category}: ${i.amount.toLocaleString()}원`).join(' / '));
-
+                
                 // GET 방식으로 변경 (CORS 우회)
                 fetch(DIARY_API_URL + '?' + params.toString())
                     .then(res => res.text())
@@ -424,18 +426,18 @@
         function editDiary(id) {
             const entry = diaryData.find(e => e.id === id);
             if(!entry) return;
-
+            
             selectedDiaryDate = { y: entry.yyyy, m: entry.mm, d: entry.dd };
             editingDiaryId = entry.id;
-
+            
             document.getElementById('diaryContent').value = entry.content;
             currentMood = entry.mood;
             document.getElementById('diaryImportant').checked = entry.isImportant;
             document.querySelectorAll('#view-diary .segment-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('mood-' + currentMood).classList.add('active');
-
+            
             updateDiaryFormLabel();
-
+            
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -447,7 +449,7 @@
                 renderDiary(); 
             } 
         }
-
+        
         function deleteDiary(id) { 
             if(confirm("삭제할까요?")) { 
                 diaryData = diaryData.filter(e => e.id !== id); 
@@ -464,11 +466,11 @@
             if(btn) btn.classList.add('active'); 
             renderDiary(); 
         }
-
+        
         function applyDateFilter(y, m, d) { 
             selectedDiaryDate = { y, m, d };
             editingDiaryId = null;
-
+            
             const existingEntry = diaryData.find(e => e.yyyy === y && e.mm === m && e.dd === d);
             if(existingEntry) {
                 document.getElementById('diaryContent').value = existingEntry.content;
@@ -481,12 +483,12 @@
                 document.getElementById('diaryContent').value = '';
                 document.getElementById('diaryImportant').checked = false;
             }
-
+            
             // 필터를 날짜로 설정하여 해당 날짜 일기만 보이도록
             filterMode = 'date';
             filterDate = { y, m, d };
             document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
-
+            
             updateDiaryFormLabel();
             renderCalendar();
             renderDiary();
@@ -494,7 +496,7 @@
         }
 
         function changeMonth(step) { calMonth += step; if(calMonth < 0) { calMonth = 11; calYear--; } else if(calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
-
+        
         function renderCalendar() {
             document.getElementById('calMonthYear').innerText = `${calYear}년 ${calMonth + 1}월`;
             const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
@@ -509,11 +511,11 @@
                 grid.innerHTML += `<div class="cal-day ${isToday ? 'today' : ''} ${isActive ? 'active' : ''}" onclick="applyDateFilter(${calYear}, ${calMonth + 1}, ${d})">${d}${dotHTML}</div>`;
             }
         }
-
+        
         function renderDiary() {
             const listEl = document.getElementById('diaryList'); listEl.innerHTML = '';
             let filteredData = diaryData;
-
+            
             if(filterMode === 'important') {
                 filteredData = diaryData.filter(e => e.isImportant);
             } else if(filterMode === 'bull') {
@@ -525,13 +527,13 @@
             } else if(filterMode === 'date' && filterDate) {
                 filteredData = diaryData.filter(e => e.yyyy === filterDate.y && e.mm === filterDate.m && e.dd === filterDate.d);
             }
-
+            
             if(filteredData.length === 0) return listEl.innerHTML = `<div style="text-align:center; color:var(--text-sub); padding:30px 0; font-size:14px;">조건에 맞는 기록이 없습니다.</div>`;
-
+            
             filteredData.forEach(entry => {
                 const moodEmoji = entry.mood === 'bull' ? '🐂 강세' : (entry.mood === 'bear' ? '🐻 약세' : '🤔 관망');
                 const moodColor = entry.mood === 'bull' ? '#FF3B30' : (entry.mood === 'bear' ? '#007AFF' : '#8E8E93'); 
-
+                
                 let portfolioHTML = '';
                 if(entry.portfolio && entry.portfolio.items && entry.portfolio.items.length > 0) {
                     portfolioHTML = `<div class="portfolio-snapshot">
@@ -539,10 +541,10 @@
                         ${entry.portfolio.items.map(item => `<div class="portfolio-snapshot-item"><span>${item.category}</span><span>${item.amount.toLocaleString()}원</span></div>`).join('')}
                     </div>`;
                 }
-
+                
                 const starClass = entry.isImportant ? 'filled' : 'empty';
                 const starIcon = entry.isImportant ? '⭐' : '☆';
-
+                
                 listEl.innerHTML += `<div class="diary-card">
                     <div class="diary-star ${starClass}" onclick="toggleImportant(${entry.id})">${starIcon}</div>
                     <div style="display:flex; justify-content:flex-start; align-items:center; margin-bottom: 12px; padding-right: 30px;">
@@ -564,7 +566,7 @@
             categoryStates[cat] = !categoryStates[cat];
             render();
         }
-
+        
         function setChartType(type, btn) { 
             chartType = type; 
             document.querySelectorAll('#view-portfolio .segment-btn').forEach(b => b.classList.remove('active')); 
@@ -573,37 +575,37 @@
             document.getElementById('goalArea').style.display = type === 'goal' ? 'flex' : 'none'; 
             render(); 
         }
-
+        
         function adjustPlaceholder() { 
             const cat = document.getElementById('assetCat').value; 
             document.getElementById('newName').placeholder = (cat === '주식' || cat === '코인') ? "Ticker (예: VOO)" : "명칭 (예: 카뱅)"; 
         }
-
+        
         function render() {
             const listEl = document.getElementById('list'); 
             listEl.innerHTML = ''; 
             let total = 0; 
-
+            
             const categories = {
                 '주식': [],
                 '코인': [],
                 '현금': [],
                 '적금': []
             };
-
+            
             data.forEach(item => {
                 total += (item.amount || 0);
                 if(categories[item.cat]) {
                     categories[item.cat].push(item);
                 }
             });
-
+            
             document.getElementById('goalCenterTxt').innerText = GOAL >= 100000000 ? (GOAL/100000000).toFixed(1) + "억" : (GOAL/10000).toFixed(0) + "만"; 
             let percent = Math.min((total / GOAL) * 100, 100); 
             document.getElementById('goalWater').style.height = percent + '%'; 
             document.getElementById('goalPercent').innerText = percent.toFixed(1) + '%'; 
             document.getElementById('goalRemain').innerText = total >= GOAL ? "🎉 목표 달성!" : `${(GOAL-total).toLocaleString()}원 남음`;
-
+            
             const chartLabels = [], chartValues = [], chartColors = [];
             const colorMap = {
                 '주식': '#007AFF',
@@ -611,7 +613,7 @@
                 '현금': '#34C759',
                 '적금': '#FF9500'
             };
-
+            
             Object.entries(categories).forEach(([cat, items]) => {
                 if(items.length > 0) {
                     const catTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
@@ -620,18 +622,18 @@
                     chartColors.push(colorMap[cat]);
                 }
             });
-
+            
             // 목록 렌더링 (카테고리별 + 접기/펼치기)
             Object.entries(categories).forEach(([cat, items]) => {
                 if(items.length === 0) return;
-
+                
                 const catTotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
                 const catPercent = total > 0 ? (catTotal / total * 100).toFixed(1) : '0.0';
-
+                
                 const isOpen = categoryStates[cat] !== false; // 기본 펼침
                 const toggleIcon = isOpen ? '▼' : '▶';
                 const itemsClass = isOpen ? 'expanded' : 'collapsed';
-
+                
                 listEl.innerHTML += `<div class="category-section">
                     <div class="category-header" onclick="toggleCategory('${cat}')" style="background: ${colorMap[cat]}15;">
                         <span style="color: ${colorMap[cat]};">${cat}</span>
@@ -642,13 +644,13 @@
                     </div>
                     <div class="category-items ${itemsClass}" id="items-${cat}">
                 `;
-
+                
                 items.sort((a,b) => b.amount - a.amount).forEach((item) => {
                     const isMarket = (item.cat === '주식' || item.cat === '코인');
                     const catStr = isMarket ? `${(item.qty||0).toLocaleString()}${item.cat==='주식'?'주':'개'}` : '';
                     const amountHTML = (isMarket && (!item.amount || item.amount === 0)) ? `<span style='color:#FF3B30; font-size:12px;'>연동 필요</span>` : `${Math.floor(item.amount).toLocaleString()}원`;
                     const percentHTML = total > 0 ? (item.amount/total*100).toFixed(1) + '%' : '0%';
-
+                    
                     listEl.innerHTML += `<div class="asset-item" onclick="openModal(${data.indexOf(item)})">
                         <div class="item-left">
                             <div class="color-dot" style="background:${colorMap[cat]}"></div>
@@ -663,12 +665,12 @@
                         </div>
                     </div>`;
                 });
-
+                
                 listEl.innerHTML += `</div></div>`;
             });
-
+            
             document.getElementById('totalAmount').innerText = Math.floor(total).toLocaleString() + '원';
-
+            
             if(chart) chart.destroy(); 
             if(chartValues.length > 0 && chartType === 'pie') { 
                 try { 
@@ -734,7 +736,7 @@
             document.getElementById('newVal').value = ''; 
             showToast("담겼습니다!"); 
         }
-
+        
         function openModal(idx) { 
             selIdx = idx; 
             const item = data[idx];
@@ -743,12 +745,12 @@
             document.getElementById('mCurrentInfo').innerText = `현재: ${(isMarket ? item.qty : item.amount).toLocaleString()}${isMarket ? (item.cat==='주식'?'주':'개') : '원'}`; 
             document.getElementById('modal').style.display='flex'; 
         }
-
+        
         function closeModal() { 
             document.getElementById('modal').style.display='none'; 
             document.getElementById('mInput').value = ''; 
         }
-
+        
         function tradeAsset(type) { 
             const v = getRawNum(document.getElementById('mInput').value);
             const isMarket = (data[selIdx].cat === '주식' || data[selIdx].cat === '코인'); 
@@ -768,7 +770,7 @@
             saveData(); 
             closeModal(); 
         }
-
+        
         function delAsset() { 
             if(confirm('삭제할까요?')) { 
                 data.splice(selIdx, 1); 
@@ -776,16 +778,16 @@
                 closeModal(); 
             } 
         }
-
+        
         function openGoalM() { 
             document.getElementById('goalInput').value = GOAL.toLocaleString(); 
             document.getElementById('goalModal').style.display='flex'; 
         }
-
+        
         function closeGoalModal() { 
             document.getElementById('goalModal').style.display='none'; 
         }
-
+        
         function saveGoal() { 
             const val = getRawNum(document.getElementById('goalInput').value); 
             if(val > 0) { 
@@ -795,7 +797,7 @@
                 closeGoalModal(); 
             } 
         }
-
+        
         function saveData() { 
             localStorage.setItem('my_assets_v10', JSON.stringify(data)); 
             render(); 
@@ -805,24 +807,24 @@
             let url = document.getElementById('csvUrl').value.trim(); 
             if(!url) return showToast("URL을 입력해주세요."); 
             showToast("⏳ 안전하게 동기화 중...");
-
+            
             localStorage.setItem('my_csv_url_v10', url);
-
+            
             try {
                 const res = await fetch(url); 
                 if(!res.ok) throw new Error(`서버 응답 오류`); 
                 const dataObj = await res.json();
-
+                
                 const getVal = (key) => { 
                     return dataObj[key.toUpperCase()] !== undefined ? dataObj[key.toUpperCase()] : null; 
                 };
-
+                
                 const rateVal = getVal('EXCHANGE_RATE'); 
                 if(rateVal) { 
                     rate = parseFloat(rateVal); 
                     document.getElementById('rateInfo').innerText = `환율: ${rate.toLocaleString()}원`; 
                 }
-
+                
                 let syncCount = 0;
                 data.forEach(item => { 
                     if(item.cat === '주식' || item.cat === '코인') { 
@@ -833,12 +835,12 @@
                         }
                     } 
                 });
-
+                
                 saveData(); 
                 showToast(`✅ 완벽하게 동기화 완료! (${syncCount}개 업데이트)`);
             } catch(e) { 
                 console.error(e);
-                alert("동기화 실패:\n방금 만든 '앱스 스크립트(웹 앱) URL'이 맞는지 확인해주세요.");
+                alert("동기화 실패:\\n방금 만든 '앱스 스크립트(웹 앱) URL'이 맞는지 확인해주세요.");
                 showToast("❌ 실패: 앱스 스크립트 연동 오류"); 
             } 
         }
@@ -858,4 +860,38 @@
         };
     </script>
 </body>
-</html>
+</html>'''
+
+# 파일 저장
+with open('/tmp/output/portfolio_v15_final.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("✅ 포트폴리오 웹 v15 (최종 버전) 생성 완료!")
+print("\n📋 주요 수정 사항:")
+print("\n1️⃣ 자산 현황")
+print("   ✅ 거시경제 나침반 제거")
+print("   ✅ 카테고리별 목록 접기/펼치기 기능 추가")
+print("   ✅ 각 카테고리 클릭 시 하위 자산 목록 토글")
+print("   ✅ 카테고리 헤더에 총액 & 비율 표시")
+print("\n2️⃣ 투자 일기")
+print("   ✅ 구글 시트 동기화 방식 개선 (GET 방식)")
+print("   ✅ 캘린더 날짜 클릭 시 해당 날짜 일기만 필터링")
+print("   ✅ 중요 표시 별 아이콘 개선 (⭐ 채워짐 / ☆ 빈 별)")
+print("   ✅ 별 색상 명확화 (노랑 vs 회색)")
+
+표준 출력
+✅ 포트폴리오 웹 v15 (최종 버전) 생성 완료!
+
+📋 주요 수정 사항:
+
+1️⃣ 자산 현황
+   ✅ 거시경제 나침반 제거
+   ✅ 카테고리별 목록 접기/펼치기 기능 추가
+   ✅ 각 카테고리 클릭 시 하위 자산 목록 토글
+   ✅ 카테고리 헤더에 총액 & 비율 표시
+
+2️⃣ 투자 일기
+   ✅ 구글 시트 동기화 방식 개선 (GET 방식)
+   ✅ 캘린더 날짜 클릭 시 해당 날짜 일기만 필터링
+   ✅ 중요 표시 별 아이콘 개선 (⭐ 채워짐 / ☆ 빈 별)
+   ✅ 별 색상 명확화 (노랑 vs 회색)
