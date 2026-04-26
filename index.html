@@ -618,25 +618,48 @@
             document.getElementById('goalPercent').innerText = percent.toFixed(1) + '%'; 
             document.getElementById('goalRemain').innerText = total >= GOAL ? "🎉 목표 달성!" : `${(GOAL-total).toLocaleString()}원 남음`;
             
-            // 차트에 개별 종목 매핑
-            const chartLabels = [], chartValues = [], chartColors = [];
-            const palette = ['#007AFF', '#5856D6', '#34C759', '#FF9500', '#FF3B30', '#5AC8FA', '#AF52DE', '#FFCC00', '#4CD964', '#8E8E93'];
-            let colorIdx = 0;
+            // --- 2중 도넛 차트 렌더링 로직 시작 ---
+            const activeAssets = data.filter(item => item.amount > 0);
+            
+            // 1. 안쪽 고리 데이터 구성 (카테고리)
+            const innerLabels = [], innerData = [], innerColors = [];
+            const colorMap = { '주식': '#007AFF', '코인': '#5856D6', '현금': '#34C759', '적금': '#FF9500' };
+            const catTotals = { '주식': 0, '코인': 0, '현금': 0, '적금': 0 };
+            
+            activeAssets.forEach(item => { catTotals[item.cat] += item.amount; });
+            
+            ['주식', '코인', '현금', '적금'].forEach(cat => {
+                if(catTotals[cat] > 0) {
+                    innerLabels.push(cat);
+                    innerData.push(catTotals[cat]);
+                    innerColors.push(colorMap[cat]);
+                }
+            });
 
-            const colorMap = {
-                '주식': '#007AFF',
-                '코인': '#5856D6',
-                '현금': '#34C759',
-                '적금': '#FF9500'
+            // 2. 바깥쪽 고리 데이터 구성 (세부 종목)
+            const catOrder = { '주식': 1, '코인': 2, '현금': 3, '적금': 4 };
+            activeAssets.sort((a, b) => {
+                if (catOrder[a.cat] !== catOrder[b.cat]) return (catOrder[a.cat] || 99) - (catOrder[b.cat] || 99);
+                return b.amount - a.amount;
+            });
+
+            const outerLabels = [], outerData = [], outerColors = [];
+            const baseColors = {
+                '주식': [ '#3395FF', '#66B0FF', '#99CBFF', '#CCE6FF', '#0059B3' ],
+                '코인': [ '#7977DE', '#9A99E6', '#BBBAEF', '#DCDCF7', '#403EA0' ],
+                '현금': [ '#5DD27A', '#86DD9C', '#AFE8BD', '#D7F3DE', '#269642' ],
+                '적금': [ '#FFAA33', '#FFBF66', '#FFD599', '#FFEACC', '#B36800' ]
             };
 
-            // 차트 데이터 구성 (금액이 0보다 큰 개별 종목만)
-            data.filter(item => item.amount > 0).sort((a,b) => b.amount - a.amount).forEach(item => {
-                chartLabels.push(item.name);
-                chartValues.push(item.amount);
-                chartColors.push(palette[colorIdx % palette.length]);
-                colorIdx++;
+            let catCounts = { '주식': 0, '코인': 0, '현금': 0, '적금': 0 };
+            activeAssets.forEach(item => {
+                outerLabels.push(item.name);
+                outerData.push(item.amount);
+                let colorArr = baseColors[item.cat] || ['#8E8E93'];
+                outerColors.push(colorArr[catCounts[item.cat] % colorArr.length]);
+                catCounts[item.cat]++;
             });
+            // --- 2중 도넛 차트 렌더링 로직 끝 ---
             
             Object.entries(categories).forEach(([cat, items]) => {
                 if(items.length === 0) return;
@@ -686,52 +709,63 @@
             document.getElementById('totalAmount').innerText = Math.floor(total).toLocaleString() + '원';
             
             if(chart) chart.destroy(); 
-            if(chartValues.length > 0 && chartType === 'pie') { 
+            if(outerData.length > 0 && chartType === 'pie') { 
                 try { 
                     chart = new Chart(document.getElementById('portfolioChart'), { 
                         type: 'doughnut', 
                         data: { 
-                            labels: chartLabels, 
-                            datasets: [{ 
-                                data: chartValues, 
-                                backgroundColor: chartColors, 
-                                borderWidth: 3,
-                                borderColor: '#FFFFFF'
-                            }] 
+                            datasets: [
+                                {
+                                    // 바깥쪽 원 (세부 종목)
+                                    data: outerData,
+                                    backgroundColor: outerColors,
+                                    labels: outerLabels,
+                                    borderWidth: 2,
+                                    borderColor: '#FFFFFF',
+                                    weight: 2
+                                },
+                                {
+                                    // 안쪽 원 (카테고리)
+                                    data: innerData,
+                                    backgroundColor: innerColors,
+                                    labels: innerLabels,
+                                    borderWidth: 2,
+                                    borderColor: '#FFFFFF',
+                                    weight: 1
+                                }
+                            ]
                         }, 
                         options: { 
+                            maintainAspectRatio: false,
+                            cutout: '40%',
                             plugins: { 
-                                legend: { 
-                                    display: true, 
-                                    position: 'right', 
-                                    labels: { 
-                                        boxWidth: 15, 
-                                        font: { size: 12, weight: 'bold' },
-                                        padding: 15
-                                    } 
-                                }, 
+                                legend: { display: false }, 
                                 datalabels: { 
                                     color: '#FFFFFF',
-                                    font: { size: 14, weight: 'bold' },
+                                    font: { size: 12, weight: 'bold' },
                                     formatter: (value, ctx) => {
                                         let sum = 0;
-                                        let dataArr = ctx.chart.data.datasets[0].data;
-                                        dataArr.map(data => { sum += data; });
-                                        let percentage = (value*100 / sum).toFixed(1)+"%";
-                                        // 5% 미만인 종목은 라벨 숨김 처리하여 겹침 방지
-                                        return (value*100 / sum) >= 5 ? percentage : '';
+                                        ctx.dataset.data.forEach(d => sum += d);
+                                        let percentage = (value * 100 / sum);
+                                        
+                                        if (ctx.datasetIndex === 1) { // 안쪽 원 (카테고리명 표시)
+                                            const label = ctx.dataset.labels[ctx.dataIndex];
+                                            return percentage >= 5 ? label : '';
+                                        } 
+                                        else { // 바깥쪽 원 (퍼센트 표시)
+                                            return percentage >= 5 ? percentage.toFixed(1) + '%' : '';
+                                        }
                                     }
                                 },
                                 tooltip: {
                                     callbacks: {
                                         label: function(context) {
-                                            return context.label + ': ' + context.parsed.toLocaleString() + '원';
+                                            const label = context.dataset.labels[context.dataIndex];
+                                            return label + ': ' + context.parsed.toLocaleString() + '원';
                                         }
                                     }
                                 }
-                            }, 
-                            maintainAspectRatio: false,
-                            cutout: '60%'
+                            }
                         },
                         plugins: [ChartDataLabels]
                     }); 
