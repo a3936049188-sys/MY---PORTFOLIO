@@ -69,7 +69,7 @@
         .fin-meta { font-size: 12px; color: var(--sub); margin-top: 2px; }
         .fin-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 8px; color: #fff; }
         .fin-section { font-size: 12px; font-weight: 700; color: var(--sub); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .fin-chart-wrap { height: 180px; position: relative; }
+        .fin-chart-wrap { height: 240px; position: relative; }
         .fin-no-data { text-align: center; padding: 30px 0; color: var(--sub); font-size: 14px; background: #F9F9F9; border-radius: 12px; }
         .fin-how { background: #FFF8E7; border: 1px solid #FFD60A; border-radius: 12px; padding: 14px; font-size: 13px; line-height: 1.6; color: #333; }
         .fin-how strong { color: #B8860B; }
@@ -544,6 +544,17 @@ function renderFinBody(ticker, finData){
     const lastNi=ni[lastIdx]!=null?(ni[lastIdx]>=0?'▲ ':'▼ ')+Math.abs(ni[lastIdx]).toFixed(1)+'억':'-';
     const niCls=ni[lastIdx]!=null?(ni[lastIdx]>=0?'up':'down'):'';
 
+    // 분기 이름 짧게: '2025-09' → '25.Q3
+    function shortPeriod(yr) {
+        var est=yr.includes('예정');
+        var m=yr.match(/(\d{4})-(\d{2})/);
+        if(!m) return yr.substring(0,8);
+        var y=m[1].substring(2);
+        var month=parseInt(m[2]);
+        var q=month<=3?'Q1':month<=6?'Q2':month<=9?'Q3':'Q4';
+        return "'"+y+'.'+q+(est?' ⚠️':'');
+    }
+
     // 테이블 행
     let tableRows='';
     years.forEach(function(yr,i){
@@ -556,7 +567,7 @@ function renderFinBody(ticker, finData){
         const mVal=opM[i]!=null?opM[i]+'%':'-';
         const mC=opM[i]!=null?(opM[i]>=0?'up':'down'):'';
         tableRows+='<tr>'
-            +'<td style="font-weight:600;font-size:11px;white-space:nowrap;">'+yr.replace(' FY','')+'</td>'
+            +'<td style="font-weight:700;font-size:12px;white-space:nowrap;">'+shortPeriod(yr)+'</td>'
             +'<td>'+rev[i].toFixed(1)+'</td>'
             +'<td class="'+rCls+'">'+(rDiff?(parseFloat(rDiff)>=0?'▲':'▼')+Math.abs(rDiff)+'%':'-')+'</td>'
             +'<td class="'+(op[i]>=0?'up':'down')+'">'+opVal+'</td>'
@@ -597,7 +608,7 @@ function renderFinBody(ticker, finData){
         finChartInst=new Chart(ctx,{
             type:'bar',
             data:{
-                labels:years.map(y=>y.replace(' FY','')),
+                labels:years.map(function(y){var m=y.match(/(\d{4})-(\d{2})/);if(!m)return y.substring(0,8);var q=parseInt(m[2])<=3?'Q1':parseInt(m[2])<=6?'Q2':parseInt(m[2])<=9?'Q3':'Q4';return "'"+m[1].substring(2)+'.'+q;}),
                 datasets:[
                     {label:'매출('+unit+')',data:rev,backgroundColor:'rgba(0,122,255,0.7)',borderRadius:6,order:2},
                     {label:'영업이익',data:op.map(v=>v||0),backgroundColor:'rgba(52,199,89,0.8)',borderRadius:6,order:2},
