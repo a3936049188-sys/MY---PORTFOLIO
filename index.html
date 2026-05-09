@@ -503,48 +503,72 @@ function renderFinBody(ticker, finData){
         return;
     }
 
-    // 단위 표시
     const unit=finData.unit||'억달러';
-    const currency=finData.currency||'USD';
     const memo=finData.memo||'';
+    const isQuarterly=finData.isQuarterly||false;
+    const rev=finData.revenue||[];
+    const op=finData.operatingIncome||[];
+    const ni=finData.netIncome||[];
+    const eps=finData.eps||[];
+    const opM=finData.opMargin||[];
+    const years=finData.years||[];
 
-    // 성장률 계산
-    const rev=finData.revenue;
-    const op=finData.operatingIncome;
-    const years=finData.years;
-
-    let revGrowth='-', opGrowth='-';
+    // 매출 성장률
+    let revGrowth='-';
     if(rev.length>=2&&rev[0]>0) revGrowth=((rev[rev.length-1]-rev[0])/rev[0]*100).toFixed(1)+'%';
-    if(op.length>=2&&op[0]>0) opGrowth=((op[op.length-1]-op[0])/op[0]*100).toFixed(1)+'%';
 
-    // 테이블 행 생성
+    // 최신 분기 지표
+    const lastIdx=years.length-1;
+    const lastEps=eps[lastIdx]!=null?'$'+eps[lastIdx].toFixed(2):'-';
+    const lastOpM=opM[lastIdx]!=null?opM[lastIdx]+'%':'-';
+    const lastNi=ni[lastIdx]!=null?(ni[lastIdx]>=0?'▲ ':'▼ ')+Math.abs(ni[lastIdx]).toFixed(1)+'억':'-';
+    const niCls=ni[lastIdx]!=null?(ni[lastIdx]>=0?'up':'down'):'';
+
+    // 테이블 행
     let tableRows='';
-    years.forEach((yr,i)=>{
+    years.forEach(function(yr,i){
         const rDiff=i>0&&rev[i-1]>0?((rev[i]-rev[i-1])/rev[i-1]*100).toFixed(1):null;
-        const oDiff=i>0&&op[i-1]>0?((op[i]-op[i-1])/op[i-1]*100).toFixed(1):null;
         const rCls=rDiff?parseFloat(rDiff)>=0?'up':'down':'';
-        const oCls=oDiff?parseFloat(oDiff)>=0?'up':'down':'';
-        tableRows+=`<tr>
-            <td style="font-weight:600;">${yr}</td>
-            <td>${rev[i]?rev[i].toLocaleString():'-'}</td>
-            <td class="${rCls}">${rDiff?(parseFloat(rDiff)>=0?'▲':'▼')+Math.abs(rDiff)+'%':'-'}</td>
-            <td>${op[i]!==undefined&&op[i]!==''?op[i].toLocaleString():'-'}</td>
-            <td class="${oCls}">${oDiff?(parseFloat(oDiff)>=0?'▲':'▼')+Math.abs(oDiff)+'%':'-'}</td>
-        </tr>`;
+        const opVal=op[i]!=null?op[i].toFixed(1):'-';
+        const niVal=ni[i]!=null?ni[i].toFixed(1):'-';
+        const niC=ni[i]!=null?(ni[i]>=0?'up':'down'):'';
+        const epsVal=eps[i]!=null?'$'+eps[i].toFixed(2):'-';
+        const mVal=opM[i]!=null?opM[i]+'%':'-';
+        const mC=opM[i]!=null?(opM[i]>=0?'up':'down'):'';
+        tableRows+='<tr>'
+            +'<td style="font-weight:600;font-size:11px;white-space:nowrap;">'+yr.replace(' FY','')+'</td>'
+            +'<td>'+rev[i].toFixed(1)+'</td>'
+            +'<td class="'+rCls+'">'+(rDiff?(parseFloat(rDiff)>=0?'▲':'▼')+Math.abs(rDiff)+'%':'-')+'</td>'
+            +'<td class="'+(op[i]>=0?'up':'down')+'">'+opVal+'</td>'
+            +'<td class="'+niC+'">'+niVal+'</td>'
+            +'<td>'+epsVal+'</td>'
+            +'<td class="'+mC+'">'+mVal+'</td>'
+            +'</tr>';
     });
 
-    body.innerHTML=`
-        ${memo?`<div style="font-size:12px;color:var(--sub);background:#F9F9F9;padding:8px 12px;border-radius:8px;margin-bottom:4px;">💬 ${memo}</div>`:''}
-        <div class="fin-section">📊 매출 · 영업이익 추이 (단위: ${unit})</div>
-        <div class="fin-chart-wrap"><canvas id="finChart"></canvas></div>
-        <table class="fin-table" style="margin-top:14px;">
-            <thead><tr><th>연도</th><th>매출</th><th>증감</th><th>영업이익</th><th>증감</th></tr></thead>
-            <tbody>${tableRows}</tbody>
-        </table>
-        <div style="display:flex;gap:10px;margin-top:14px;">
-            <div class="h-stat"><div class="h-stat-label">매출 성장 (전체)</div><div class="h-stat-val" style="color:${parseFloat(revGrowth)>=0?'var(--green)':'var(--red)'}">${revGrowth}</div></div>
-            <div class="h-stat"><div class="h-stat-label">영업이익 성장 (전체)</div><div class="h-stat-val" style="color:${parseFloat(opGrowth)>=0?'var(--green)':'var(--red)'}">${opGrowth}</div></div>
-        </div>`;
+    const memoLines=memo.split('|');
+    const memoMain=memoLines[0]||'';
+    const memoSub=memoLines[1]?memoLines[1].trim():'';
+
+    body.innerHTML=''
+        +'<div style="background:#F0F6FF;border-radius:12px;padding:12px;margin-bottom:12px;">'
+        +(memoSub?'<div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px;">💡 '+memoSub+'</div>':'')
+        +'<div style="display:flex;gap:8px;">'
+        +'<div style="flex:1;text-align:center;"><div style="font-size:10px;color:var(--sub);">최근분기 EPS</div><div style="font-size:16px;font-weight:800;color:var(--main);">'+lastEps+'</div></div>'
+        +'<div style="flex:1;text-align:center;"><div style="font-size:10px;color:var(--sub);">영업이익률</div><div style="font-size:16px;font-weight:800;color:'+(opM[lastIdx]>=0?'var(--green)':'var(--red)')+'">'+lastOpM+'</div></div>'
+        +'<div style="flex:1;text-align:center;"><div style="font-size:10px;color:var(--sub);">순이익</div><div style="font-size:16px;font-weight:800;" class="'+niCls+'">'+lastNi+'</div></div>'
+        +'</div></div>'
+        +'<div class="fin-section">📊 분기별 실적 (단위: '+unit+')</div>'
+        +'<div class="fin-chart-wrap"><canvas id="finChart"></canvas></div>'
+        +'<div style="overflow-x:auto;margin-top:12px;">'
+        +'<table class="fin-table" style="min-width:360px;">'
+        +'<thead><tr><th>분기</th><th>매출</th><th>증감</th><th>영업이익</th><th>순이익</th><th>EPS</th><th>영업이익률</th></tr></thead>'
+        +'<tbody>'+tableRows+'</tbody>'
+        +'</table></div>'
+        +'<div style="display:flex;gap:8px;margin-top:12px;">'
+        +'<div class="h-stat"><div class="h-stat-label">매출 변동 (4분기)</div><div class="h-stat-val" style="color:'+(parseFloat(revGrowth)>=0?'var(--green)':'var(--red)')+'">'+revGrowth+'</div></div>'
+        +'<div class="h-stat"><div class="h-stat-label">데이터 기준</div><div class="h-stat-val" style="font-size:11px;color:var(--sub);">'+(isQuarterly?'분기별':'연도별')+'</div></div>'
+        +'</div>';
 
     // 차트 그리기
     setTimeout(()=>{
@@ -553,16 +577,20 @@ function renderFinBody(ticker, finData){
         finChartInst=new Chart(ctx,{
             type:'bar',
             data:{
-                labels:years,
+                labels:years.map(y=>y.replace(' FY','')),
                 datasets:[
-                    {label:`매출(${unit})`,data:rev,backgroundColor:'rgba(0,122,255,0.7)',borderRadius:6,order:2},
-                    {label:`영업이익(${unit})`,data:op.map(v=>v||0),backgroundColor:'rgba(52,199,89,0.85)',borderRadius:6,order:2}
+                    {label:'매출('+unit+')',data:rev,backgroundColor:'rgba(0,122,255,0.7)',borderRadius:6,order:2},
+                    {label:'영업이익',data:op.map(v=>v||0),backgroundColor:'rgba(52,199,89,0.8)',borderRadius:6,order:2},
+                    {label:'순이익',data:ni.map(v=>v!=null?v:0),type:'line',borderColor:'#FF9500',backgroundColor:'rgba(255,149,0,0.1)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#FF9500',fill:false,order:1,yAxisID:'y'}
                 ]
             },
             options:{
                 maintainAspectRatio:false,
-                plugins:{legend:{position:'top',labels:{font:{size:11},boxWidth:12}},datalabels:{display:false}},
-                scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'#F2F2F7'},ticks:{font:{size:10}}}}
+                plugins:{legend:{position:'top',labels:{font:{size:10},boxWidth:10}},datalabels:{display:false}},
+                scales:{
+                    x:{grid:{display:false},ticks:{font:{size:9}}},
+                    y:{grid:{color:'#F2F2F7'},ticks:{font:{size:9}}}
+                }
             },
             plugins:[ChartDataLabels]
         });
