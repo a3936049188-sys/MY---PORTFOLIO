@@ -93,7 +93,7 @@
         .dot-bull { background: var(--red); } .dot-bear { background: var(--blue); } .dot-neutral { background: var(--sub); }
         .cal-circle { width: 44px; height: 44px; border-radius: 50%; background: #E8E7F3; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: #555; transition: 0.15s; position: relative; }
         .c-empty { background: #EDECEA; }
-        .c-today { background: #5A9E72 !important; border: none; font-weight: 700; }
+        .c-today { background: #656566 !important; color: #fff; border: none; font-weight: 700; }
         .c-active { background: #5A9E72 !important; border-radius: 22px; color: #fff !important; font-weight: 800; }
         .c-bull { background: #FFD4D0; }
         .c-bear { background: #C5DCFF; }
@@ -311,6 +311,16 @@
     <button onclick="closeGoalModal()" style="border:none;color:var(--sub);background:none;cursor:pointer;">취소</button>
 </div></div>
 
+<!-- 메모 모달 -->
+<div id="memoModal" class="modal-bg" onclick="closeMemoModalBg(event)"><div class="modal-box">
+    <div class="modal-title" id="memoTitle">메모</div>
+    <textarea id="memoInput" rows="5" placeholder="이 자산에 대한 메모를 입력하세요."></textarea>
+    <div class="modal-btn-row">
+        <button class="modal-btn" style="background:#E5E5EA;color:#000;" onclick="closeMemoModal()">취소</button>
+        <button class="modal-btn" style="background:var(--blue);" onclick="saveMemo()">저장</button>
+    </div>
+</div></div>
+
 <!-- 재무 분석 모달 -->
 <div id="finModal" class="modal-bg" onclick="closeFin(event)"><div class="modal-box">
     <div class="fin-header">
@@ -345,6 +355,10 @@ let DIARY_API=localStorage.getItem('my_diary_api')||'';
 let mood='bull', filterMode='all';
 const TODAY=new Date(); let calY=TODAY.getFullYear(), calM=TODAY.getMonth();
 let selDate=null, editId=null, catState={};
+let memos={}; try{const s=localStorage.getItem('my_asset_memos');if(s)memos=JSON.parse(s);}catch(e){memos={};}
+let memoIdx=-1;
+let memoCatKey='';
+let longPressTimer=null,longPressTriggered=false;
 
 const COLOR={'주식':'#007AFF','코인':'#5856D6','현금':'#34C759','적금':'#FF9500'};
 const BASE_COLORS={
@@ -462,7 +476,7 @@ function render(){
 
         listEl.innerHTML+='<div style="margin-bottom:20px;">'
             +'<div class="cat-header" onclick="toggleCat(\''+cat+'\')" style="background:'+COLOR[cat]+'15;">'
-            +'<span style="color:'+COLOR[cat]+';">'+catLabel+'</span>'
+            +'<span onclick="if(longPressTriggered){longPressTriggered=false;event.stopPropagation();}" onmousedown="startCatLongPress(\''+cat+'\')" onmouseup="endLongPress()" onmouseleave="endLongPress()" ontouchstart="startCatLongPress(\''+cat+'\')" ontouchend="endLongPress()" ontouchmove="endLongPress()" style="color:'+COLOR[cat]+';">'+catLabel+'</span>'
             +'<div style="display:flex;align-items:center;gap:10px;">'
             +'<span style="font-size:12px;color:var(--blue);font-weight:600;">'+totalDisp+'</span>'
             +'<span style="font-size:12px;color:var(--sub);">'+(isOpen?'▼':'▶')+'</span>'
@@ -479,14 +493,19 @@ function render(){
             else amtHTML=Math.floor(krw(item)).toLocaleString()+'원';
             const pctHTML=total>0?(krw(item)/total*100).toFixed(1)+'%':'0%';
             const idx=assets.indexOf(item);
-            const finBtn=isMarket?'<span onclick="event.stopPropagation();openFin('+idx+')" style="font-size:10px;background:var(--blue);color:#fff;padding:2px 7px;border-radius:5px;margin-left:6px;font-weight:700;cursor:pointer;vertical-align:middle;">분석</span>':'';
+            const finBtn=item.cat==='주식'?'<span onclick="event.stopPropagation();openFin('+idx+')" style="font-size:10px;background:var(--blue);color:#fff;padding:2px 7px;border-radius:5px;margin-left:6px;font-weight:700;cursor:pointer;vertical-align:middle;">분석</span>':'';
+            const memoKey=item.cat+'_'+item.name;
+            const hasMemo=!!memos[memoKey];
+            const memoIndicator='';
+            const memoText=memos[memoKey]||'';
+            const memoLine=memoText?'<div style="font-size:11px;color:#656566;margin-top:3px;white-space:pre-wrap;line-height:1.4;">'+memoText+'</div>':'';
 
-            listEl.innerHTML+=`<div class="asset-item" onclick="openEdit(${idx})">
+            listEl.innerHTML+=`<div class="asset-item" onclick="handleItemClick(${idx})" onmousedown="startLongPress(${idx})" onmouseup="endLongPress()" onmouseleave="endLongPress()" ontouchstart="startLongPress(${idx})" ontouchend="endLongPress()" ontouchmove="endLongPress()">
                 <div class="item-left">
                     <div class="color-dot" style="background:${COLOR[cat]}"></div>
                     <div style="flex:1;min-width:0;">
-                        <span class="item-name">${item.name}${finBtn}</span>
-                        <span class="item-sub">${sub}</span>
+                        <span class="item-name">${item.name}${finBtn}${memoIndicator}</span>
+                        <span class="item-sub">${sub}</span>${memoLine}
                     </div>
                 </div>
                 <div class="item-right">
@@ -712,7 +731,7 @@ function addAsset(){
     document.getElementById('newVal').value='';
     toast('담겼습니다!');
 }
-function toggleCat(cat){catState[cat]=!catState[cat];render();}
+function toggleCat(cat){const isOpen=catState[cat]!==false;catState[cat]=!isOpen;render();}
 function openEdit(idx){
     selIdx=idx;
     const item=assets[idx];
@@ -763,11 +782,20 @@ function closeDiaryWrite(){
     window.scrollTo({top:0,behavior:'smooth'});
 }
 function changeMonth(s){calM+=s;if(calM<0){calM=11;calY--;}else if(calM>11){calM=0;calY++;}renderCal();}
-function renderCal(){document.getElementById('calLabel').innerHTML=`${calY}년 ${calM+1}월 <span style="font-size:14px;color:#AAAAAA;">∨</span>`;const grid=document.getElementById('calGrid');grid.innerHTML='';const first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate();for(let i=0;i<first;i++)grid.innerHTML+=`<div></div>`;for(let d=1;d<=days;d++){const isToday=calY===TODAY.getFullYear()&&calM===TODAY.getMonth()&&d===TODAY.getDate();const isAct=selDate&&selDate.y===calY&&selDate.m===(calM+1)&&selDate.d===d;const entries=diaries.filter(e=>e.yyyy===calY&&e.mm===(calM+1)&&e.dd===d);const mood=entries.length>0?entries[0].mood:null;let circleHTML='';if(mood==='bull'){const bg=isAct?'background:#5A9E7240;border-radius:50%;':'';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🐂</div>`;}else if(mood==='bear'){const bg=isAct?'background:#5A9E7240;border-radius:50%;':'';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🐻</div>`;}else if(mood==='neutral'){const bg=isAct?'background:#5A9E7240;border-radius:50%;':'';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🤔</div>`;}else{let cls='cal-circle';if(isAct)cls+=' c-active';else if(isToday)cls+=' c-today';else cls+=' c-empty';circleHTML=`<div class="${cls}"></div>`;}let evtBadge='';if(entries.length>0&&entries[0].eventText){const em=Array.from(entries[0].eventText.trim())[0]||'📌';evtBadge=`<span style="position:absolute;top:0;right:2px;font-size:10px;">${em}</span>`;}const numColor=(isAct||isToday)?'#5A9E72':'#888';const numWeight=(isAct||isToday)?'700':'400';grid.innerHTML+=`<div style="text-align:center;padding:3px 0;cursor:pointer;position:relative;" onclick="applyDateFilter(${calY},${calM+1},${d})">${circleHTML}${evtBadge}<div style="font-size:11px;color:${numColor};font-weight:${numWeight};margin-top:2px;">${d}</div></div>`;}}
+function renderCal(){document.getElementById('calLabel').innerHTML=`${calY}년 ${calM+1}월 <span style="font-size:14px;color:#AAAAAA;">∨</span>`;const grid=document.getElementById('calGrid');grid.innerHTML='';const first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate();for(let i=0;i<first;i++)grid.innerHTML+=`<div></div>`;for(let d=1;d<=days;d++){const isToday=calY===TODAY.getFullYear()&&calM===TODAY.getMonth()&&d===TODAY.getDate();const isAct=selDate&&selDate.y===calY&&selDate.m===(calM+1)&&selDate.d===d;const entries=diaries.filter(e=>e.yyyy===calY&&e.mm===(calM+1)&&e.dd===d);const mood=entries.length>0?entries[0].mood:null;let circleHTML='';if(mood==='bull'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🐂</div>`;}else if(mood==='bear'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🐻</div>`;}else if(mood==='neutral'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🤔</div>`;}else{let cls='cal-circle';if(isToday)cls+=' c-today';else cls+=' c-empty';circleHTML=`<div class="${cls}"></div>`;}let evtBadge='';if(entries.length>0&&entries[0].eventText){const em=Array.from(entries[0].eventText.trim())[0]||'📌';evtBadge=`<span style="position:absolute;top:0;right:2px;font-size:10px;">${em}</span>`;}const numColor=isToday?'#656566':'#888';const numWeight=isToday?'700':'400';grid.innerHTML+=`<div style="text-align:center;padding:3px 0;cursor:pointer;position:relative;" onclick="applyDateFilter(${calY},${calM+1},${d})">${circleHTML}${evtBadge}<div style="font-size:11px;color:${numColor};font-weight:${numWeight};margin-top:2px;">${d}</div></div>`;}}
 function renderDiary(){const el=document.getElementById('diaryList');el.innerHTML='';let filtered=diaries;if(filterMode==='important')filtered=diaries.filter(e=>e.isImportant);else if(filterMode==='bull')filtered=diaries.filter(e=>e.mood==='bull');else if(filterMode==='bear')filtered=diaries.filter(e=>e.mood==='bear');else if(filterMode==='neutral')filtered=diaries.filter(e=>e.mood==='neutral');else if(filterMode==='date'&&selDate)filtered=diaries.filter(e=>e.yyyy===selDate.y&&e.mm===selDate.m&&e.dd===selDate.d);if(!filtered.length)return el.innerHTML=`<div style="text-align:center;color:var(--sub);padding:30px 0;font-size:14px;">기록이 없습니다.</div>`;filtered.forEach(e=>{const mc=e.mood==='bull'?'#FF3B30':e.mood==='bear'?'#007AFF':'#8E8E93';const ml=e.mood==='bull'?'🐂 강세':e.mood==='bear'?'🐻 약세':'🤔 관망';let snap='';if(e.portfolio?.items?.length>0)snap=`<div class="portfolio-snap"><div style="font-size:12px;color:var(--sub);margin-bottom:8px;font-weight:600;">📊 당시 자산 (${e.portfolio.total.toLocaleString()}원)</div>${e.portfolio.items.map(i=>`<div class="snap-row"><span>${i.name}</span><span>${i.amount.toLocaleString()}원</span></div>`).join('')}</div>`;const evtH=e.eventText?`<div style="font-size:13px;font-weight:700;color:#D08A00;background:#FFF5E1;padding:4px 8px;border-radius:6px;display:inline-block;margin-bottom:8px;">📌 ${e.eventText}</div>`:'';el.innerHTML+=`<div class="diary-card"><div class="diary-star ${e.isImportant?'filled':'empty'}" onclick="toggleImp(${e.id})">${e.isImportant?'⭐':'☆'}</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-right:30px;"><span style="font-size:11px;font-weight:700;color:${mc};background:${mc}18;padding:4px 8px;border-radius:6px;">${ml}</span><span style="font-size:13px;color:var(--sub);">${e.dateStr}</span></div>${evtH}<div style="font-size:15px;line-height:1.5;white-space:pre-wrap;margin-bottom:12px;">${e.content}</div>${snap}<div style="text-align:right;margin-top:12px;"><span style="font-size:12px;color:var(--blue);cursor:pointer;background:#F0F6FF;padding:4px 10px;border-radius:6px;margin-right:8px;" onclick="editDiary(${e.id})">수정</span><span style="font-size:12px;color:var(--sub);cursor:pointer;background:#F2F2F7;padding:4px 10px;border-radius:6px;" onclick="delDiary(${e.id})">삭제</span></div></div>`;});}
 function toggleImp(id){const e=diaries.find(d=>d.id===id);if(e){e.isImportant=!e.isImportant;localStorage.setItem('my_diary_v13',JSON.stringify(diaries));renderDiary();}}
 function editDiary(id){const e=diaries.find(d=>d.id===id);if(!e)return;applyDateFilter(e.yyyy,e.mm,e.dd);}
 function delDiary(id){if(confirm('삭제할까요?')){diaries=diaries.filter(e=>e.id!==id);localStorage.setItem('my_diary_v13',JSON.stringify(diaries));renderCal();renderDiary();}}
+function openMemo(idx){memoIdx=idx;const item=assets[idx];const key=item.cat+'_'+item.name;document.getElementById('memoInput').value=memos[key]||'';document.getElementById('memoTitle').innerText=item.name+' 메모';document.getElementById('memoModal').style.display='flex';}
+function saveMemo(){const key=memoIdx>=0?(assets[memoIdx].cat+'_'+assets[memoIdx].name):memoCatKey;if(!key)return;const val=document.getElementById('memoInput').value.trim();if(val)memos[key]=val;else delete memos[key];localStorage.setItem('my_asset_memos',JSON.stringify(memos));closeMemoModal();toast('메모 저장됨');render();}
+function closeMemoModal(){document.getElementById('memoModal').style.display='none';memoIdx=-1;memoCatKey='';}
+function openCatMemo(cat){memoCatKey='__cat__'+cat;memoIdx=-1;const catLabels={주식:'📈 주식',코인:'🪙 코인',현금:'💵 현금',적금:'🏦 적금'};document.getElementById('memoInput').value=memos[memoCatKey]||'';document.getElementById('memoTitle').innerText=(catLabels[cat]||cat)+' 메모';document.getElementById('memoModal').style.display='flex';}
+function startLongPress(idx){longPressTriggered=false;longPressTimer=setTimeout(()=>{longPressTriggered=true;openMemo(idx);},800);}
+function startCatLongPress(cat){longPressTriggered=false;longPressTimer=setTimeout(()=>{longPressTriggered=true;openCatMemo(cat);},800);}
+function endLongPress(){clearTimeout(longPressTimer);}
+function handleItemClick(idx){if(longPressTriggered){longPressTriggered=false;return;}openEdit(idx);}
+function closeMemoModalBg(e){if(e.target===document.getElementById('memoModal'))closeMemoModal();}
 
 // ===== 플랜 =====
 function renderRatios(){const c=document.getElementById('ratioContainer');c.innerHTML='';ratios.forEach((item,i)=>{const d=document.createElement('div');d.className='ratio-item';d.innerHTML=`<input type="text" placeholder="투자 항목" value="${item.name}" oninput="ratios[${i}].name=this.value;saveRatios();calcPlan()"><input type="tel" placeholder="%" value="${item.ratio}" style="flex:1;text-align:center;" oninput="fmtNum(this);ratios[${i}].ratio=raw(this.value);saveRatios();calcPlan();">${ratios.length>1?`<button class="ratio-remove" onclick="rmRatio(${i})">삭제</button>`:''}`; c.appendChild(d);});}
