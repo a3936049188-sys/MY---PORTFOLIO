@@ -93,7 +93,7 @@
         .dot-bull { background: var(--red); } .dot-bear { background: var(--blue); } .dot-neutral { background: var(--sub); }
         .cal-circle { width: 44px; height: 44px; border-radius: 50%; background: #E8E7F3; display: inline-flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 500; color: #555; transition: 0.15s; position: relative; }
         .c-empty { background: #EDECEA; }
-        .c-today { background: transparent !important; border: 2.5px solid #5A9E72; color: #5A9E72; font-weight: 700; }
+        .c-today { background: #5A9E72 !important; border: none; font-weight: 700; }
         .c-active { background: #5A9E72 !important; border-radius: 22px; color: #fff !important; font-weight: 800; }
         .c-bull { background: #FFD4D0; }
         .c-bear { background: #C5DCFF; }
@@ -188,8 +188,27 @@
         </div>
         <div class="cal-grid" id="calGrid"></div>
     </div>
+    <div class="filter-bar">
+        <button class="chip active" onclick="applyFilter('all',this)">전체</button>
+        <button class="chip" onclick="applyFilter('important',this)">⭐ 중요</button>
+        <button class="chip" onclick="applyFilter('bull',this)">🐂 강세</button>
+        <button class="chip" onclick="applyFilter('bear',this)">🐻 약세</button>
+        <button class="chip" onclick="applyFilter('neutral',this)">🤔 관망</button>
+    </div>
+    <div id="diaryList"></div>
+</div>
+
+<!-- 일기 쓰기 페이지 -->
+<div id="view-diary-write" class="view">
+    <div style="display:flex;align-items:center;gap:12px;margin:20px 0 15px;">
+        <button onclick="closeDiaryWrite()" style="background:#F2F2F7;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">←</button>
+        <div style="flex:1;">
+            <div style="font-size:20px;font-weight:800;" id="diaryWriteDate">오늘의 기록</div>
+            <div style="font-size:12px;color:var(--sub);" id="diaryWriteSub">시장 기록을 남겨보세요</div>
+        </div>
+        <button id="importantStar" onclick="toggleImportantStar()" style="background:none;border:none;font-size:30px;cursor:pointer;flex-shrink:0;line-height:1;">☆</button>
+    </div>
     <div class="card">
-        <div style="font-size:15px;font-weight:700;margin-bottom:12px;">📝 <span id="diaryDateLabel">오늘</span> 시장의 기록</div>
         <div class="seg" style="background:#F2F2F7;">
             <button class="seg-btn active" id="mood-bull" onclick="setMood('bull',this)">🐂 강세장</button>
             <button class="seg-btn" id="mood-bear" onclick="setMood('bear',this)">🐻 약세장</button>
@@ -206,21 +225,11 @@
                 </div>
                 <input type="text" id="diaryEvent" placeholder="직접 입력도 가능합니다." style="height:40px;font-size:14px;">
             </div>
-            <textarea id="diaryContent" rows="4" placeholder="오늘 왜 매수/매도했나요?"></textarea>
+            <textarea id="diaryContent" rows="5" placeholder="오늘 왜 매수/매도했나요?"></textarea>
         </div>
-        <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;font-weight:600;">
-            <input type="checkbox" id="diaryImportant" style="width:20px;height:20px;accent-color:#FFD60A;"> ⭐ 중요 표시
-        </label>
-        <button class="btn-primary" onclick="saveDiary()" style="background:var(--main);" id="diaryBtn">일기 저장 & 백업</button>
+        <input type="checkbox" id="diaryImportant" style="display:none;">
+        <button class="btn-primary" onclick="saveDiary()" style="background:var(--main);" id="diaryBtn">저장하기</button>
     </div>
-    <div class="filter-bar">
-        <button class="chip active" onclick="applyFilter('all',this)">전체</button>
-        <button class="chip" onclick="applyFilter('important',this)">⭐ 중요</button>
-        <button class="chip" onclick="applyFilter('bull',this)">🐂 강세</button>
-        <button class="chip" onclick="applyFilter('bear',this)">🐻 약세</button>
-        <button class="chip" onclick="applyFilter('neutral',this)">🤔 관망</button>
-    </div>
-    <div id="diaryList"></div>
 </div>
 
 <!-- 플랜 탭 -->
@@ -244,17 +253,6 @@
 
 <!-- 설정 탭 -->
 <div id="view-sync" class="view">
-    <div class="card">
-        <div style="font-size:16px;font-weight:700;margin-bottom:12px;">🖥️ 로컬 서버 연동 (Node.js)</div>
-        <div style="font-size:13px;color:var(--sub);margin-bottom:12px;">PC에서 서버 실행 후 자동 동기화 (구글 시트 불필요)</div>
-        <button class="btn-primary" onclick="syncLocal()" style="background:#34C759;margin-bottom:10px;">⚡ 로컬 서버로 동기화</button>
-        <div style="background:#F0FFF4;border-radius:12px;padding:12px;border:1px solid #A8E6BA;font-size:12px;line-height:1.8;color:#1D6B38;">
-            <b>① 서버 시작 방법</b><br>
-            PowerShell 열기 → <code style="background:#E0F5E9;padding:2px 6px;border-radius:4px;">cd "C:\Users\김서우\Desktop\portfolio"</code><br>
-            → <code style="background:#E0F5E9;padding:2px 6px;border-radius:4px;">node server.js</code> 실행<br>
-            <b>② 이 버튼 누르면 자동으로 보유 종목 가격 조회</b>
-        </div>
-    </div>
     <div class="card">
         <div style="font-size:16px;font-weight:700;margin-bottom:12px;">📊 구글 시트 연동</div>
         <div style="font-size:13px;color:var(--sub);margin-bottom:10px;">주가·환율·재무 데이터를 한 번에 동기화합니다.</div>
@@ -652,19 +650,6 @@ function renderFinBody(ticker, finData){
 function closeFinModal(){document.getElementById('finModal').style.display='none';if(finChartInst){finChartInst.destroy();finChartInst=null;}}
 function closeFin(e){if(e.target===document.getElementById('finModal'))closeFinModal();}
 
-// ===== 로컬 서버 동기화 =====
-async function syncLocal(){
-    const stocks=assets.filter(a=>a.cat==='주식').map(a=>a.name).join(',');
-    const coins=assets.filter(a=>a.cat==='코인').map(a=>a.name).join(',');
-    if(!stocks&&!coins)return toast('주식/코인 자산을 먼저 추가해주세요.');
-    const params=[];
-    if(stocks)params.push('stocks='+stocks);
-    if(coins)params.push('coins='+coins);
-    const url='http://localhost:3000/sync?'+params.join('&');
-    document.getElementById('csvUrl').value=url;
-    await syncData();
-}
-
 // ===== 동기화 (재무 데이터 포함) =====
 async function syncData(){
     const url=document.getElementById('csvUrl').value.trim();
@@ -746,18 +731,42 @@ function closeGoalModal(){document.getElementById('goalModal').style.display='no
 function saveGoal(){const v=raw(document.getElementById('goalInput').value);if(v>0){GOAL=v;localStorage.setItem('my_goal_v10',GOAL);render();closeGoalModal();}}
 
 // ===== 일기 =====
-function setMood(m,btn){mood=m;document.querySelectorAll('#view-diary .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+function setMood(m,btn){mood=m;document.querySelectorAll('#view-diary-write .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+function toggleImportantStar(){const cb=document.getElementById('diaryImportant');cb.checked=!cb.checked;const s=document.getElementById('importantStar');s.innerText=cb.checked?'⭐':'☆';}
 function addEvt(t){const el=document.getElementById('diaryEvent');el.value=el.value?el.value+', '+t:t;}
 function updateDiaryLabel(){const lbl=document.getElementById('diaryDateLabel'),btn=document.getElementById('diaryBtn');if(selDate){const{y,m,d}=selDate;lbl.innerText=`${y}.${String(m).padStart(2,'0')}.${String(d).padStart(2,'0')}`;const ex=diaries.find(e=>e.yyyy===y&&e.mm===m&&e.dd===d);if(ex){editId=ex.id;document.getElementById('diaryContent').value=ex.content;document.getElementById('diaryEvent').value=ex.eventText||'';mood=ex.mood;document.getElementById('diaryImportant').checked=ex.isImportant;document.querySelectorAll('#view-diary .seg-btn').forEach(b=>b.classList.remove('active'));document.getElementById('mood-'+mood).classList.add('active');btn.innerText='수정 & 백업';}else{editId=null;document.getElementById('diaryContent').value='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;btn.innerText='저장 & 백업';}}else{lbl.innerText='오늘';btn.innerText='저장 & 백업';}}
 function getSnap(){const s={total:0,items:[]};assets.forEach(i=>{s.total+=krw(i);if(krw(i)>0)s.items.push({name:i.name,amount:krw(i)});});s.items.sort((a,b)=>b.amount-a.amount);return s;}
-function saveDiary(){const content=document.getElementById('diaryContent').value.trim(),evt=document.getElementById('diaryEvent').value.trim();if(!content&&!evt)return toast('내용이나 일정을 입력해주세요.');const imp=document.getElementById('diaryImportant').checked;let yy,mm,dd;if(selDate){yy=selDate.y;mm=selDate.m;dd=selDate.d;}else{const n=new Date();yy=n.getFullYear();mm=n.getMonth()+1;dd=n.getDate();}const ds=`${yy}.${String(mm).padStart(2,'0')}.${String(dd).padStart(2,'0')}`;const snap=getSnap();diaries=diaries.filter(e=>!(e.yyyy===yy&&e.mm===mm&&e.dd===dd));diaries.unshift({id:editId||Date.now(),yyyy:yy,mm:mm,dd:dd,dateStr:ds,content,mood,isImportant:imp,portfolio:snap,eventText:evt});localStorage.setItem('my_diary_v13',JSON.stringify(diaries));document.getElementById('diaryContent').value='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;selDate=null;editId=null;updateDiaryLabel();renderCal();renderDiary();if(DIARY_API){const p=new URLSearchParams();p.append('date',ds);p.append('mood',mood==='bull'?'🐂 강세':mood==='bear'?'🐻 약세':'🤔 관망');p.append('important',imp?'O':'X');p.append('content',(evt?'[일정: '+evt+']\n':'')+content);p.append('total_amount',snap.total.toLocaleString()+'원');fetch(DIARY_API+'?'+p.toString()).then(()=>toast('✅ 저장 & 시트 동기화!')).catch(()=>toast('앱 저장 완료'));}else toast('✅ 저장되었습니다.');}
+function saveDiary(){const content=document.getElementById('diaryContent').value.trim(),evt=document.getElementById('diaryEvent').value.trim();if(!content&&!evt)return toast('내용이나 일정을 입력해주세요.');const imp=document.getElementById('diaryImportant').checked;let yy,mm,dd;if(selDate){yy=selDate.y;mm=selDate.m;dd=selDate.d;}else{const n=new Date();yy=n.getFullYear();mm=n.getMonth()+1;dd=n.getDate();}const ds=`${yy}.${String(mm).padStart(2,'0')}.${String(dd).padStart(2,'0')}`;const snap=getSnap();diaries=diaries.filter(e=>!(e.yyyy===yy&&e.mm===mm&&e.dd===dd));diaries.unshift({id:editId||Date.now(),yyyy:yy,mm:mm,dd:dd,dateStr:ds,content,mood,isImportant:imp,portfolio:snap,eventText:evt});localStorage.setItem('my_diary_v13',JSON.stringify(diaries));document.getElementById('diaryContent').value='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;selDate=null;editId=null;closeDiaryWrite();if(DIARY_API){const p=new URLSearchParams();p.append('date',ds);p.append('mood',mood==='bull'?'🐂 강세':mood==='bear'?'🐻 약세':'🤔 관망');p.append('important',imp?'O':'X');p.append('content',(evt?'[일정: '+evt+']\n':'')+content);p.append('total_amount',snap.total.toLocaleString()+'원');fetch(DIARY_API+'?'+p.toString()).then(()=>toast('✅ 저장 & 시트 동기화!')).catch(()=>toast('앱 저장 완료'));}else toast('✅ 저장되었습니다.');}
 function applyFilter(type,btn){filterMode=type;document.querySelectorAll('.filter-bar .chip').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderDiary();}
-function applyDateFilter(y,m,d){selDate={y,m,d};editId=null;const ex=diaries.find(e=>e.yyyy===y&&e.mm===m&&e.dd===d);if(ex){document.getElementById('diaryContent').value=ex.content;document.getElementById('diaryEvent').value=ex.eventText||'';mood=ex.mood;document.getElementById('diaryImportant').checked=ex.isImportant;document.querySelectorAll('#view-diary .seg-btn').forEach(b=>b.classList.remove('active'));document.getElementById('mood-'+mood).classList.add('active');editId=ex.id;}else{document.getElementById('diaryContent').value='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;}filterMode='date';document.querySelectorAll('.filter-bar .chip').forEach(b=>b.classList.remove('active'));updateDiaryLabel();renderCal();renderDiary();window.scrollTo({top:0,behavior:'smooth'});}
+function applyDateFilter(y,m,d){
+    selDate={y,m,d};editId=null;
+    const ex=diaries.find(e=>e.yyyy===y&&e.mm===m&&e.dd===d);
+    if(ex){document.getElementById('diaryContent').value=ex.content;document.getElementById('diaryEvent').value=ex.eventText||'';mood=ex.mood;document.getElementById('diaryImportant').checked=ex.isImportant;editId=ex.id;}
+    else{document.getElementById('diaryContent').value='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;mood='bull';}
+    document.querySelectorAll('#view-diary-write .seg-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('mood-'+mood).classList.add('active');
+    const imp=ex?ex.isImportant:false;document.getElementById('diaryImportant').checked=imp;document.getElementById('importantStar').innerText=imp?'⭐':'☆';
+    const ds=`${y}년 ${String(m).padStart(2,'0')}월 ${String(d).padStart(2,'0')}일`;
+    document.getElementById('diaryWriteDate').innerText=ds;
+    document.getElementById('diaryWriteSub').innerText=ex?'기록을 수정합니다':'시장 기록을 남겨보세요';
+    document.getElementById('diaryBtn').innerText=ex?'수정하기':'저장하기';
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-diary-write').classList.add('active');
+    document.body.classList.add('diary-bg');
+    window.scrollTo({top:0,behavior:'smooth'});
+}
+function closeDiaryWrite(){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-diary').classList.add('active');
+    document.body.classList.add('diary-bg');
+    renderCal();renderDiary();
+    window.scrollTo({top:0,behavior:'smooth'});
+}
 function changeMonth(s){calM+=s;if(calM<0){calM=11;calY--;}else if(calM>11){calM=0;calY++;}renderCal();}
-function renderCal(){document.getElementById('calLabel').innerHTML=`${calY}년 ${calM+1}월 <span style="font-size:14px;color:#AAAAAA;">∨</span>`;const grid=document.getElementById('calGrid');grid.innerHTML='';const first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate();for(let i=0;i<first;i++)grid.innerHTML+=`<div></div>`;for(let d=1;d<=days;d++){const isToday=calY===TODAY.getFullYear()&&calM===TODAY.getMonth()&&d===TODAY.getDate();const isAct=selDate&&selDate.y===calY&&selDate.m===(calM+1)&&selDate.d===d;const entries=diaries.filter(e=>e.yyyy===calY&&e.mm===(calM+1)&&e.dd===d);let cls='cal-circle';if(isAct)cls+=' c-active';else if(isToday)cls+=' c-today';else if(entries.length>0)cls+=` c-${entries[0].mood}`;else cls+=' c-empty';let evtEmoji='';if(entries.length>0&&entries[0].eventText){const em=Array.from(entries[0].eventText.trim())[0]||'📌';evtEmoji=`<span style="position:absolute;top:-4px;right:-4px;font-size:11px;">${em}</span>`;}grid.innerHTML+=`<div style="text-align:center;padding:5px 0;" onclick="applyDateFilter(${calY},${calM+1},${d})"><div class="${cls}">${d}${evtEmoji}</div></div>`;}}
+function renderCal(){document.getElementById('calLabel').innerHTML=`${calY}년 ${calM+1}월 <span style="font-size:14px;color:#AAAAAA;">∨</span>`;const grid=document.getElementById('calGrid');grid.innerHTML='';const first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate();for(let i=0;i<first;i++)grid.innerHTML+=`<div></div>`;for(let d=1;d<=days;d++){const isToday=calY===TODAY.getFullYear()&&calM===TODAY.getMonth()&&d===TODAY.getDate();const isAct=selDate&&selDate.y===calY&&selDate.m===(calM+1)&&selDate.d===d;const entries=diaries.filter(e=>e.yyyy===calY&&e.mm===(calM+1)&&e.dd===d);const mood=entries.length>0?entries[0].mood:null;let circleHTML='';if(mood==='bull'){const bg=isAct?'background:#5A9E7240;border-radius:50%;':'';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🐂</div>`;}else if(mood==='bear'){const bg=isAct?'background:#5A9E7240;border-radius:50%;':'';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🐻</div>`;}else if(mood==='neutral'){const bg=isAct?'background:#5A9E7240;border-radius:50%;':'';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🤔</div>`;}else{let cls='cal-circle';if(isAct)cls+=' c-active';else if(isToday)cls+=' c-today';else cls+=' c-empty';circleHTML=`<div class="${cls}"></div>`;}let evtBadge='';if(entries.length>0&&entries[0].eventText){const em=Array.from(entries[0].eventText.trim())[0]||'📌';evtBadge=`<span style="position:absolute;top:0;right:2px;font-size:10px;">${em}</span>`;}const numColor=(isAct||isToday)?'#5A9E72':'#888';const numWeight=(isAct||isToday)?'700':'400';grid.innerHTML+=`<div style="text-align:center;padding:3px 0;cursor:pointer;position:relative;" onclick="applyDateFilter(${calY},${calM+1},${d})">${circleHTML}${evtBadge}<div style="font-size:11px;color:${numColor};font-weight:${numWeight};margin-top:2px;">${d}</div></div>`;}}
 function renderDiary(){const el=document.getElementById('diaryList');el.innerHTML='';let filtered=diaries;if(filterMode==='important')filtered=diaries.filter(e=>e.isImportant);else if(filterMode==='bull')filtered=diaries.filter(e=>e.mood==='bull');else if(filterMode==='bear')filtered=diaries.filter(e=>e.mood==='bear');else if(filterMode==='neutral')filtered=diaries.filter(e=>e.mood==='neutral');else if(filterMode==='date'&&selDate)filtered=diaries.filter(e=>e.yyyy===selDate.y&&e.mm===selDate.m&&e.dd===selDate.d);if(!filtered.length)return el.innerHTML=`<div style="text-align:center;color:var(--sub);padding:30px 0;font-size:14px;">기록이 없습니다.</div>`;filtered.forEach(e=>{const mc=e.mood==='bull'?'#FF3B30':e.mood==='bear'?'#007AFF':'#8E8E93';const ml=e.mood==='bull'?'🐂 강세':e.mood==='bear'?'🐻 약세':'🤔 관망';let snap='';if(e.portfolio?.items?.length>0)snap=`<div class="portfolio-snap"><div style="font-size:12px;color:var(--sub);margin-bottom:8px;font-weight:600;">📊 당시 자산 (${e.portfolio.total.toLocaleString()}원)</div>${e.portfolio.items.map(i=>`<div class="snap-row"><span>${i.name}</span><span>${i.amount.toLocaleString()}원</span></div>`).join('')}</div>`;const evtH=e.eventText?`<div style="font-size:13px;font-weight:700;color:#D08A00;background:#FFF5E1;padding:4px 8px;border-radius:6px;display:inline-block;margin-bottom:8px;">📌 ${e.eventText}</div>`:'';el.innerHTML+=`<div class="diary-card"><div class="diary-star ${e.isImportant?'filled':'empty'}" onclick="toggleImp(${e.id})">${e.isImportant?'⭐':'☆'}</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-right:30px;"><span style="font-size:11px;font-weight:700;color:${mc};background:${mc}18;padding:4px 8px;border-radius:6px;">${ml}</span><span style="font-size:13px;color:var(--sub);">${e.dateStr}</span></div>${evtH}<div style="font-size:15px;line-height:1.5;white-space:pre-wrap;margin-bottom:12px;">${e.content}</div>${snap}<div style="text-align:right;margin-top:12px;"><span style="font-size:12px;color:var(--blue);cursor:pointer;background:#F0F6FF;padding:4px 10px;border-radius:6px;margin-right:8px;" onclick="editDiary(${e.id})">수정</span><span style="font-size:12px;color:var(--sub);cursor:pointer;background:#F2F2F7;padding:4px 10px;border-radius:6px;" onclick="delDiary(${e.id})">삭제</span></div></div>`;});}
 function toggleImp(id){const e=diaries.find(d=>d.id===id);if(e){e.isImportant=!e.isImportant;localStorage.setItem('my_diary_v13',JSON.stringify(diaries));renderDiary();}}
-function editDiary(id){const e=diaries.find(d=>d.id===id);if(!e)return;selDate={y:e.yyyy,m:e.mm,d:e.dd};editId=e.id;document.getElementById('diaryContent').value=e.content;document.getElementById('diaryEvent').value=e.eventText||'';mood=e.mood;document.getElementById('diaryImportant').checked=e.isImportant;document.querySelectorAll('#view-diary .seg-btn').forEach(b=>b.classList.remove('active'));document.getElementById('mood-'+mood).classList.add('active');updateDiaryLabel();window.scrollTo({top:0,behavior:'smooth'});}
+function editDiary(id){const e=diaries.find(d=>d.id===id);if(!e)return;applyDateFilter(e.yyyy,e.mm,e.dd);}
 function delDiary(id){if(confirm('삭제할까요?')){diaries=diaries.filter(e=>e.id!==id);localStorage.setItem('my_diary_v13',JSON.stringify(diaries));renderCal();renderDiary();}}
 
 // ===== 플랜 =====
