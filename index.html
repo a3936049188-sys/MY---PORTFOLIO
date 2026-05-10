@@ -28,7 +28,8 @@
         .btn-primary { height: 50px; background: var(--blue); color: #fff; border: none; border-radius: 14px; font-size: 16px; font-weight: 600; width: 100%; cursor: pointer; }
         .input-row { display: flex; gap: 8px; flex-wrap: wrap; }
         .input-col { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
-        .asset-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #E5E5EA; gap: 10px; cursor: pointer; }
+        .asset-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid #E5E5EA; gap: 10px; cursor: pointer; -webkit-user-select: none; user-select: none; }
+        .cat-header { -webkit-user-select: none; user-select: none; }
         .item-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
         .color-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
         .item-name { font-size: 16px; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -36,8 +37,7 @@
         .item-right { text-align: right; flex-shrink: 0; }
         .item-amount { font-size: 16px; font-weight: 600; display: block; }
         .item-pct { font-size: 11px; color: var(--blue); font-weight: 600; }
-        .cat-header { font-size: 14px; font-weight: 700; padding: 10px 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 8px; }
-        .cat-items { overflow: hidden; transition: max-height 0.3s ease; }
+        .cat-header { font-size: 14px; font-weight: 700; padding: 10px 12px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; margin-bottom: 8px; -webkit-user-select: none; user-select: none; }        .cat-items { overflow: hidden; transition: max-height 0.3s ease; }
         .cat-items.open { max-height: 3000px; }
         .cat-items.closed { max-height: 0; }
         .chart-wrap { position: relative; height: 280px; display: flex; align-items: center; justify-content: center; }
@@ -791,8 +791,8 @@ function openMemo(idx){memoIdx=idx;const item=assets[idx];const key=item.cat+'_'
 function saveMemo(){const key=memoIdx>=0?(assets[memoIdx].cat+'_'+assets[memoIdx].name):memoCatKey;if(!key)return;const val=document.getElementById('memoInput').value.trim();if(val)memos[key]=val;else delete memos[key];localStorage.setItem('my_asset_memos',JSON.stringify(memos));closeMemoModal();toast('메모 저장됨');render();}
 function closeMemoModal(){document.getElementById('memoModal').style.display='none';memoIdx=-1;memoCatKey='';}
 function openCatMemo(cat){memoCatKey='__cat__'+cat;memoIdx=-1;const catLabels={주식:'📈 주식',코인:'🪙 코인',현금:'💵 현금',적금:'🏦 적금'};document.getElementById('memoInput').value=memos[memoCatKey]||'';document.getElementById('memoTitle').innerText=(catLabels[cat]||cat)+' 메모';document.getElementById('memoModal').style.display='flex';}
-function startLongPress(idx){longPressTriggered=false;longPressTimer=setTimeout(()=>{longPressTriggered=true;openMemo(idx);},800);}
-function startCatLongPress(cat){longPressTriggered=false;longPressTimer=setTimeout(()=>{longPressTriggered=true;openCatMemo(cat);},800);}
+function startLongPress(idx){longPressTriggered=false;longPressTimer=setTimeout(()=>{longPressTriggered=true;openMemo(idx);},400);}
+function startCatLongPress(cat){longPressTriggered=false;longPressTimer=setTimeout(()=>{longPressTriggered=true;openCatMemo(cat);},400);}
 function endLongPress(){clearTimeout(longPressTimer);}
 function handleItemClick(idx){if(longPressTriggered){longPressTriggered=false;return;}openEdit(idx);}
 function closeMemoModalBg(e){if(e.target===document.getElementById('memoModal'))closeMemoModal();}
