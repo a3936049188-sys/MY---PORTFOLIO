@@ -121,6 +121,18 @@
         .snap-row { font-size: 11px; margin-bottom: 4px; display: flex; justify-content: space-between; }
         .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #E5E5EA; border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .drum-col::-webkit-scrollbar { display: none; }
+        .fmt-bar { display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #E5E5EA; }
+        .fmt-btn { background:#F2F2F7;border:none;border-radius:8px;padding:7px 11px;font-size:13px;cursor:pointer;color:var(--main);min-width:34px;text-align:center;-webkit-user-select:none;user-select:none; }
+        .fmt-btn:active { background:var(--blue);color:#fff; }
+        .diary-editor { min-height:140px;border:1px solid #E5E5EA;border-radius:12px;padding:12px;font-size:16px;background:#FAFAFA;outline:none;font-family:inherit;line-height:1.7;-webkit-user-select:text;user-select:text; }
+        .diary-editor:empty:before { content:attr(data-placeholder);color:#C7C7CC;pointer-events:none;display:block; }
+        .diary-editor b,.diary-editor strong { font-weight:700; }
+        .diary-editor ul { padding-left:22px;margin:4px 0; }
+        .diary-editor li { margin:2px 0; }
+        .check-item { display:flex;align-items:flex-start;gap:6px;padding:2px 0;cursor:pointer;-webkit-user-select:none;user-select:none; }
+        .check-item .ci { font-size:16px;flex-shrink:0; }
+        .check-item.done { opacity:0.45;text-decoration:line-through; }
     </style>
 </head>
 <body>
@@ -152,35 +164,35 @@
             <div id="totalAmt" style="font-size:22px;font-weight:800;color:var(--blue);">0원</div>
         </div>
     </div>
-    <div class="card">
-        <div class="input-col" style="margin-bottom:0;">
-            <select id="assetCat" onchange="adjustPlaceholder()">
-                <option value="주식">📈 주식 (Ticker)</option>
-                <option value="코인">🪙 코인 (Ticker)</option>
-                <option value="현금">💵 현금</option>
-                <option value="적금">🏦 적금</option>
-            </select>
-            <div class="input-row">
-                <input type="text" id="newName" placeholder="명칭 (예: 카카오뱅크)">
-                <input type="tel" inputmode="decimal" id="newVal" placeholder="금액 입력" oninput="fmtNum(this)">
-                <select id="cashCurrencySel" style="display:none;flex:1;font-size:15px;height:48px;border-radius:12px;border:1px solid #D1D1D6;background:#FAFAFA;padding:0 12px;">
-                    <option value="KRW">🇰🇷 원화 (KRW)</option>
-                    <option value="USD">🇺🇸 달러 (USD)</option>
-                </select>
-            </div>
-            <button class="btn-primary" onclick="addAsset()">리스트에 담기</button>
-        </div>
-    </div>
     <div id="assetList" class="card" style="padding-bottom:5px;"></div>
+</div>
+
+<!-- 메모 페이지 -->
+<div id="view-memo" class="view">
+    <div style="display:flex;align-items:center;gap:12px;margin:20px 0 15px;">
+        <button onclick="closeMemoPage()" style="background:#F2F2F7;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">←</button>
+        <div style="font-size:20px;font-weight:800;flex:1;" id="memoPageTitle">메모</div>
+    </div>
+    <div class="card">
+        <div class="fmt-bar">
+            <button type="button" onmousedown="event.preventDefault();fmt('bold')" class="fmt-btn"><b>B</b></button>
+            <button type="button" onmousedown="event.preventDefault();fmt('italic')" class="fmt-btn"><i>I</i></button>
+            <button type="button" onmousedown="event.preventDefault();fmt('underline')" class="fmt-btn"><u>U</u></button>
+            <button type="button" onmousedown="event.preventDefault();fmt('strikeThrough')" class="fmt-btn" style="text-decoration:line-through;">S</button>
+            <button type="button" onmousedown="event.preventDefault();document.getElementById('memoPageContent').focus();document.execCommand('formatBlock',false,'h3')" class="fmt-btn">제목</button>
+            <button type="button" onmousedown="event.preventDefault();document.getElementById('memoPageContent').focus();document.execCommand('insertUnorderedList',false,null)" class="fmt-btn">• 목록</button>
+            <button type="button" onmousedown="event.preventDefault();document.getElementById('memoPageContent').focus();document.execCommand('insertHTML',false,'<div class=\'check-item\' onclick=\'toggleCheck(this)\'><span class=\'ci\'>☐</span> <span></span></div><br>')" class="fmt-btn">☑ 체크</button>
+        </div>
+        <div contenteditable="true" id="memoPageContent" class="diary-editor" data-placeholder="메모를 입력하세요."></div>
+        <button class="btn-primary" onclick="saveMemoPage()" style="margin-top:12px;">저장하기</button>
+    </div>
 </div>
 
 <!-- 일기 탭 -->
 <div id="view-diary" class="view">
     <div class="card" style="padding-bottom:8px;">
-        <div class="cal-header">
-            <button class="cal-nav" onclick="changeMonth(-1)">❮</button>
+        <div class="cal-header" style="justify-content:center;">
             <span id="calLabel"></span>
-            <button class="cal-nav" onclick="changeMonth(1)">❯</button>
         </div>
         <div class="cal-grid">
             <div class="cal-dname" style="color:var(--red)">일</div><div class="cal-dname">월</div><div class="cal-dname">화</div>
@@ -188,14 +200,6 @@
         </div>
         <div class="cal-grid" id="calGrid"></div>
     </div>
-    <div class="filter-bar">
-        <button class="chip active" onclick="applyFilter('all',this)">전체</button>
-        <button class="chip" onclick="applyFilter('important',this)">⭐ 중요</button>
-        <button class="chip" onclick="applyFilter('bull',this)">🐂 강세</button>
-        <button class="chip" onclick="applyFilter('bear',this)">🐻 약세</button>
-        <button class="chip" onclick="applyFilter('neutral',this)">🤔 관망</button>
-    </div>
-    <div id="diaryList"></div>
 </div>
 
 <!-- 일기 쓰기 페이지 -->
@@ -210,22 +214,22 @@
     </div>
     <div class="card">
         <div class="seg" style="background:#F2F2F7;">
-            <button class="seg-btn active" id="mood-bull" onclick="setMood('bull',this)">🐂 강세장</button>
-            <button class="seg-btn" id="mood-bear" onclick="setMood('bear',this)">🐻 약세장</button>
+            <button class="seg-btn active" id="mood-bull" onclick="setMood('bull',this)">😊 강세장</button>
+            <button class="seg-btn" id="mood-bear" onclick="setMood('bear',this)">😢 약세장</button>
             <button class="seg-btn" id="mood-neutral" onclick="setMood('neutral',this)">🤔 관망</button>
         </div>
         <div class="input-col">
-            <div style="background:#FAFAFA;padding:12px;border-radius:12px;border:1px solid #E5E5EA;">
-                <div style="font-size:13px;font-weight:600;margin-bottom:8px;">🗓️ 특별 일정 태그</div>
-                <div class="filter-bar" style="padding-bottom:6px;margin-bottom:8px;">
-                    <button class="event-chip" onclick="addEvt('🏢 실적발표')">🏢 실적발표</button>
-                    <button class="event-chip" onclick="addEvt('📉 CPI 발표')">📉 CPI 발표</button>
-                    <button class="event-chip" onclick="addEvt('🇺🇸 FOMC')">🇺🇸 FOMC</button>
-                    <button class="event-chip" onclick="addEvt('💰 배당일')">💰 배당일</button>
-                </div>
-                <input type="text" id="diaryEvent" placeholder="직접 입력도 가능합니다." style="height:40px;font-size:14px;">
+            <div id="diaryPortfolioSnap" style="background:#FAFAFA;padding:12px;border-radius:12px;border:1px solid #E5E5EA;max-height:220px;overflow-y:auto;"></div>
+            <input type="hidden" id="diaryEvent" value="">
+            <div class="fmt-bar">
+                <button type="button" onmousedown="event.preventDefault();fmt('bold')" class="fmt-btn"><b>B</b></button>
+                <button type="button" onmousedown="event.preventDefault();fmt('italic')" class="fmt-btn"><i>I</i></button>
+                <button type="button" onmousedown="event.preventDefault();fmt('underline')" class="fmt-btn"><u>U</u></button>
+                <button type="button" onmousedown="event.preventDefault();fmt('strikeThrough')" class="fmt-btn" style="text-decoration:line-through;">S</button>
+                <button type="button" onmousedown="event.preventDefault();fmtBullet()" class="fmt-btn">• 목록</button>
+                <button type="button" onmousedown="event.preventDefault();fmtCheck()" class="fmt-btn">☑ 체크</button>
             </div>
-            <textarea id="diaryContent" rows="5" placeholder="오늘 왜 매수/매도했나요?"></textarea>
+            <div contenteditable="true" id="diaryContent" class="diary-editor" data-placeholder="오늘 왜 매수/매도했나요?"></div>
         </div>
         <input type="checkbox" id="diaryImportant" style="display:none;">
         <button class="btn-primary" onclick="saveDiary()" style="background:var(--main);" id="diaryBtn">저장하기</button>
@@ -311,15 +315,29 @@
     <button onclick="closeGoalModal()" style="border:none;color:var(--sub);background:none;cursor:pointer;">취소</button>
 </div></div>
 
-<!-- 메모 모달 -->
-<div id="memoModal" class="modal-bg" onclick="closeMemoModalBg(event)"><div class="modal-box">
-    <div class="modal-title" id="memoTitle">메모</div>
-    <textarea id="memoInput" rows="5" placeholder="이 자산에 대한 메모를 입력하세요."></textarea>
-    <div class="modal-btn-row">
-        <button class="modal-btn" style="background:#E5E5EA;color:#000;" onclick="closeMemoModal()">취소</button>
-        <button class="modal-btn" style="background:var(--blue);" onclick="saveMemo()">저장</button>
+<!-- 자산 추가 모달 -->
+<div id="addModal" class="modal-bg" onclick="if(event.target===this)closeAddModal()"><div class="modal-box">
+    <div class="modal-title">자산 추가</div>
+    <select id="assetCat" onchange="adjustPlaceholder()">
+        <option value="주식">📈 주식 (Ticker)</option>
+        <option value="코인">🪙 코인 (Ticker)</option>
+        <option value="현금">💵 현금</option>
+        <option value="적금">🏦 적금</option>
+    </select>
+    <div class="input-row">
+        <input type="text" id="newName" placeholder="명칭 (예: 카카오뱅크)">
+        <input type="tel" inputmode="decimal" id="newVal" placeholder="금액 입력" oninput="fmtNum(this)">
+        <select id="cashCurrencySel" style="display:none;flex:1;font-size:15px;height:48px;border-radius:12px;border:1px solid #D1D1D6;background:#FAFAFA;padding:0 12px;">
+            <option value="KRW">🇰🇷 원화 (KRW)</option>
+            <option value="USD">🇺🇸 달러 (USD)</option>
+        </select>
     </div>
+    <button class="btn-primary" onclick="addAsset()">추가하기</button>
+    <button onclick="closeAddModal()" style="border:none;color:var(--sub);background:none;padding:10px;cursor:pointer;width:100%;">취소</button>
 </div></div>
+
+<!-- FAB -->
+<button id="fabAdd" onclick="openAddModal()" style="position:fixed;right:20px;bottom:85px;width:56px;height:56px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 16px rgba(0,122,255,0.4);z-index:9998;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>
 
 <!-- 재무 분석 모달 -->
 <div id="finModal" class="modal-bg" onclick="closeFin(event)"><div class="modal-box">
@@ -386,6 +404,7 @@ function switchTab(id,btn){
     const titles={portfolio:'자산 현황',diary:'투자 일기',salary:'투자 플랜',sync:'설정'};
     document.getElementById('pageTitle').innerText=titles[id];
     document.body.classList.toggle('diary-bg', id==='diary');
+    document.getElementById('fabAdd').style.display=id==='portfolio'?'flex':'none';
     if(id==='portfolio') render();
     if(id==='diary'){selDate=null;editId=null;updateDiaryLabel();renderCal();renderDiary();}
     if(id==='salary'){renderRatios();calcPlan();}
@@ -505,7 +524,7 @@ function render(){
                     <div class="color-dot" style="background:${COLOR[cat]}"></div>
                     <div style="flex:1;min-width:0;">
                         <span class="item-name">${item.name}${finBtn}${memoIndicator}</span>
-                        <span class="item-sub">${sub}</span>${memoLine}
+                        <span class="item-sub">${sub}</span>
                     </div>
                 </div>
                 <div class="item-right">
@@ -729,6 +748,7 @@ function addAsset(){
     saveAssets();
     document.getElementById('newName').value='';
     document.getElementById('newVal').value='';
+    closeAddModal();
     toast('담겼습니다!');
 }
 function toggleCat(cat){const isOpen=catState[cat]!==false;catState[cat]=!isOpen;render();}
@@ -755,13 +775,13 @@ function toggleImportantStar(){const cb=document.getElementById('diaryImportant'
 function addEvt(t){const el=document.getElementById('diaryEvent');el.value=el.value?el.value+', '+t:t;}
 function updateDiaryLabel(){const lbl=document.getElementById('diaryDateLabel'),btn=document.getElementById('diaryBtn');if(selDate){const{y,m,d}=selDate;lbl.innerText=`${y}.${String(m).padStart(2,'0')}.${String(d).padStart(2,'0')}`;const ex=diaries.find(e=>e.yyyy===y&&e.mm===m&&e.dd===d);if(ex){editId=ex.id;document.getElementById('diaryContent').value=ex.content;document.getElementById('diaryEvent').value=ex.eventText||'';mood=ex.mood;document.getElementById('diaryImportant').checked=ex.isImportant;document.querySelectorAll('#view-diary .seg-btn').forEach(b=>b.classList.remove('active'));document.getElementById('mood-'+mood).classList.add('active');btn.innerText='수정 & 백업';}else{editId=null;document.getElementById('diaryContent').value='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;btn.innerText='저장 & 백업';}}else{lbl.innerText='오늘';btn.innerText='저장 & 백업';}}
 function getSnap(){const s={total:0,items:[]};assets.forEach(i=>{s.total+=krw(i);if(krw(i)>0)s.items.push({name:i.name,amount:krw(i)});});s.items.sort((a,b)=>b.amount-a.amount);return s;}
-function saveDiary(){const content=document.getElementById('diaryContent').value.trim(),evt=document.getElementById('diaryEvent').value.trim();if(!content&&!evt)return toast('내용이나 일정을 입력해주세요.');const imp=document.getElementById('diaryImportant').checked;let yy,mm,dd;if(selDate){yy=selDate.y;mm=selDate.m;dd=selDate.d;}else{const n=new Date();yy=n.getFullYear();mm=n.getMonth()+1;dd=n.getDate();}const ds=`${yy}.${String(mm).padStart(2,'0')}.${String(dd).padStart(2,'0')}`;const snap=getSnap();diaries=diaries.filter(e=>!(e.yyyy===yy&&e.mm===mm&&e.dd===dd));diaries.unshift({id:editId||Date.now(),yyyy:yy,mm:mm,dd:dd,dateStr:ds,content,mood,isImportant:imp,portfolio:snap,eventText:evt});localStorage.setItem('my_diary_v13',JSON.stringify(diaries));document.getElementById('diaryContent').value='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;selDate=null;editId=null;closeDiaryWrite();if(DIARY_API){const p=new URLSearchParams();p.append('date',ds);p.append('mood',mood==='bull'?'🐂 강세':mood==='bear'?'🐻 약세':'🤔 관망');p.append('important',imp?'O':'X');p.append('content',(evt?'[일정: '+evt+']\n':'')+content);p.append('total_amount',snap.total.toLocaleString()+'원');fetch(DIARY_API+'?'+p.toString()).then(()=>toast('✅ 저장 & 시트 동기화!')).catch(()=>toast('앱 저장 완료'));}else toast('✅ 저장되었습니다.');}
+function saveDiary(){const de=document.getElementById('diaryContent'),content=de.innerHTML.trim(),evt=document.getElementById('diaryEvent').value.trim();if(!de.innerText.trim()&&!evt)return toast('내용이나 일정을 입력해주세요.');const imp=document.getElementById('diaryImportant').checked;let yy,mm,dd;if(selDate){yy=selDate.y;mm=selDate.m;dd=selDate.d;}else{const n=new Date();yy=n.getFullYear();mm=n.getMonth()+1;dd=n.getDate();}const ds=`${yy}.${String(mm).padStart(2,'0')}.${String(dd).padStart(2,'0')}`;const snap=getSnap();diaries=diaries.filter(e=>!(e.yyyy===yy&&e.mm===mm&&e.dd===dd));diaries.unshift({id:editId||Date.now(),yyyy:yy,mm:mm,dd:dd,dateStr:ds,content,mood,isImportant:imp,portfolio:snap,eventText:evt});localStorage.setItem('my_diary_v13',JSON.stringify(diaries));document.getElementById('diaryContent').innerHTML='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;selDate=null;editId=null;closeDiaryWrite();if(DIARY_API){const p=new URLSearchParams();p.append('date',ds);p.append('mood',mood==='bull'?'😊 강세':mood==='bear'?'😢 약세':'🤔 관망');p.append('important',imp?'O':'X');p.append('content',(evt?'[일정: '+evt+']\n':'')+content);p.append('total_amount',snap.total.toLocaleString()+'원');fetch(DIARY_API+'?'+p.toString()).then(()=>toast('✅ 저장 & 시트 동기화!')).catch(()=>toast('앱 저장 완료'));}else toast('✅ 저장되었습니다.');}
 function applyFilter(type,btn){filterMode=type;document.querySelectorAll('.filter-bar .chip').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderDiary();}
 function applyDateFilter(y,m,d){
     selDate={y,m,d};editId=null;
     const ex=diaries.find(e=>e.yyyy===y&&e.mm===m&&e.dd===d);
-    if(ex){document.getElementById('diaryContent').value=ex.content;document.getElementById('diaryEvent').value=ex.eventText||'';mood=ex.mood;document.getElementById('diaryImportant').checked=ex.isImportant;editId=ex.id;}
-    else{document.getElementById('diaryContent').value='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;mood='bull';}
+    if(ex){document.getElementById('diaryContent').innerHTML=ex.content&&ex.content.includes('<')?ex.content:ex.content.replace(/\n/g,'<br>');document.getElementById('diaryEvent').value=ex.eventText||'';mood=ex.mood;document.getElementById('diaryImportant').checked=ex.isImportant;editId=ex.id;}
+    else{document.getElementById('diaryContent').innerHTML='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;mood='bull';}
     document.querySelectorAll('#view-diary-write .seg-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('mood-'+mood).classList.add('active');
     const imp=ex?ex.isImportant:false;document.getElementById('diaryImportant').checked=imp;document.getElementById('importantStar').innerText=imp?'⭐':'☆';
@@ -772,7 +792,29 @@ function applyDateFilter(y,m,d){
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.getElementById('view-diary-write').classList.add('active');
     document.body.classList.add('diary-bg');
+    renderDiaryPortfolio();
     window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderDiaryPortfolio(){
+    const el=document.getElementById('diaryPortfolioSnap');
+    if(!el)return;
+    const total=assets.reduce((s,i)=>s+krw(i),0);
+    if(!assets.length){el.innerHTML='<div style="color:#C7C7CC;font-size:13px;text-align:center;padding:8px 0;">보유 종목 없음</div>';return;}
+    const cats=[...new Set(assets.map(a=>a.cat))];
+    let html='<div style="font-size:12px;font-weight:700;color:#8E8E93;margin-bottom:6px;">오늘의 포트폴리오</div>';
+    cats.forEach(cat=>{
+        const catAssets=assets.filter(a=>a.cat===cat);
+        const catTotal=catAssets.reduce((s,i)=>s+krw(i),0);
+        const catPct=total>0?Math.round(catTotal/total*100):0;
+        html+=`<div style="font-size:12px;font-weight:600;color:#3A3A3C;margin:6px 0 3px;">${cat} <span style="color:#8E8E93;font-weight:400;">${catPct}%</span></div>`;
+        catAssets.forEach(item=>{
+            const amt=krw(item);
+            const pct=total>0?(amt/total*100).toFixed(1):0;
+            html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #F2F2F7;"><span style="font-size:13px;color:#1C1C1E;">${item.name}</span><span style="font-size:12px;color:#636366;">${amt.toLocaleString()}원 <span style="color:#8E8E93;">${pct}%</span></span></div>`;
+        });
+    });
+    html+=`<div style="display:flex;justify-content:space-between;padding-top:6px;font-size:12px;font-weight:700;color:#3A3A3C;"><span>총 자산</span><span>${total.toLocaleString()}원</span></div>`;
+    el.innerHTML=html;
 }
 function closeDiaryWrite(){
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -781,21 +823,65 @@ function closeDiaryWrite(){
     renderCal();renderDiary();
     window.scrollTo({top:0,behavior:'smooth'});
 }
+function showCalPicker(){
+    if(document.getElementById('calPickerModal'))return;
+    const modal=document.createElement('div');
+    modal.id='calPickerModal';
+    modal.style.cssText='position:fixed;inset:0;z-index:20000;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,0.4);';
+    const sheet=document.createElement('div');
+    sheet.style.cssText='background:#fff;border-radius:24px 24px 0 0;';
+    sheet.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid #F2F2F7;"><button onclick="closeCalPicker()" style="background:none;border:none;font-size:16px;color:var(--sub);cursor:pointer;padding:0;">취소</button><div style="font-weight:700;font-size:17px;">날짜 이동</div><button onclick="confirmCalPicker()" style="background:none;border:none;font-size:16px;color:var(--blue);font-weight:700;cursor:pointer;padding:0;">확인</button></div>'
+    +'<div style="position:relative;padding:8px 24px 36px;">'
+    +'<div style="position:absolute;left:24px;right:24px;top:8px;height:88px;background:linear-gradient(to bottom,#fff,transparent);pointer-events:none;z-index:2;"></div>'
+    +'<div style="position:absolute;left:24px;right:24px;bottom:36px;height:88px;background:linear-gradient(to top,#fff,transparent);pointer-events:none;z-index:2;"></div>'
+    +'<div style="position:absolute;left:24px;right:24px;top:50%;height:44px;transform:translateY(-50%);background:#F2F2F7;border-radius:10px;pointer-events:none;z-index:1;"></div>'
+    +'<div style="display:flex;">'
+    +'<div id="drumYear" class="drum-col" style="flex:1;height:220px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;"></div>'
+    +'<div id="drumMonth" class="drum-col" style="flex:1;height:220px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;"></div>'
+    +'</div></div>';
+    modal.appendChild(sheet);
+    document.body.appendChild(modal);
+    function fillCol(col,items,idx){
+        const t=document.createElement('div');t.style.height='88px';col.appendChild(t);
+        items.forEach(txt=>{const d=document.createElement('div');d.style.cssText='height:44px;scroll-snap-align:center;display:flex;align-items:center;justify-content:center;font-size:18px;color:#333;';d.innerText=txt;col.appendChild(d);});
+        const b=document.createElement('div');b.style.height='88px';col.appendChild(b);
+        setTimeout(()=>{col.scrollTop=idx*44;},30);
+    }
+    const baseY=new Date().getFullYear()-10;
+    fillCol(document.getElementById('drumYear'),Array.from({length:20},(_,i)=>(baseY+i)+'년'),calY-baseY);
+    fillCol(document.getElementById('drumMonth'),Array.from({length:12},(_,i)=>(i+1)+'월'),calM);
+    modal.addEventListener('click',e=>{if(e.target===modal)closeCalPicker();});
+}
+function closeCalPicker(){const m=document.getElementById('calPickerModal');if(m)m.remove();}
+function confirmCalPicker(){
+    const yc=document.getElementById('drumYear'),mc=document.getElementById('drumMonth');
+    if(!yc||!mc)return;
+    const baseY=new Date().getFullYear()-10;
+    calY=baseY+Math.round(yc.scrollTop/44);
+    calM=Math.round(mc.scrollTop/44);
+    if(calM<0)calM=0;if(calM>11)calM=11;
+    closeCalPicker();renderCal();
+}
 function changeMonth(s){calM+=s;if(calM<0){calM=11;calY--;}else if(calM>11){calM=0;calY++;}renderCal();}
-function renderCal(){document.getElementById('calLabel').innerHTML=`${calY}년 ${calM+1}월 <span style="font-size:14px;color:#AAAAAA;">∨</span>`;const grid=document.getElementById('calGrid');grid.innerHTML='';const first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate();for(let i=0;i<first;i++)grid.innerHTML+=`<div></div>`;for(let d=1;d<=days;d++){const isToday=calY===TODAY.getFullYear()&&calM===TODAY.getMonth()&&d===TODAY.getDate();const isAct=selDate&&selDate.y===calY&&selDate.m===(calM+1)&&selDate.d===d;const entries=diaries.filter(e=>e.yyyy===calY&&e.mm===(calM+1)&&e.dd===d);const mood=entries.length>0?entries[0].mood:null;let circleHTML='';if(mood==='bull'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🐂</div>`;}else if(mood==='bear'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🐻</div>`;}else if(mood==='neutral'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🤔</div>`;}else{let cls='cal-circle';if(isToday)cls+=' c-today';else cls+=' c-empty';circleHTML=`<div class="${cls}"></div>`;}let evtBadge='';if(entries.length>0&&entries[0].eventText){const em=Array.from(entries[0].eventText.trim())[0]||'📌';evtBadge=`<span style="position:absolute;top:0;right:2px;font-size:10px;">${em}</span>`;}const numColor=isToday?'#656566':'#888';const numWeight=isToday?'700':'400';grid.innerHTML+=`<div style="text-align:center;padding:3px 0;cursor:pointer;position:relative;" onclick="applyDateFilter(${calY},${calM+1},${d})">${circleHTML}${evtBadge}<div style="font-size:11px;color:${numColor};font-weight:${numWeight};margin-top:2px;">${d}</div></div>`;}}
-function renderDiary(){const el=document.getElementById('diaryList');el.innerHTML='';let filtered=diaries;if(filterMode==='important')filtered=diaries.filter(e=>e.isImportant);else if(filterMode==='bull')filtered=diaries.filter(e=>e.mood==='bull');else if(filterMode==='bear')filtered=diaries.filter(e=>e.mood==='bear');else if(filterMode==='neutral')filtered=diaries.filter(e=>e.mood==='neutral');else if(filterMode==='date'&&selDate)filtered=diaries.filter(e=>e.yyyy===selDate.y&&e.mm===selDate.m&&e.dd===selDate.d);if(!filtered.length)return el.innerHTML=`<div style="text-align:center;color:var(--sub);padding:30px 0;font-size:14px;">기록이 없습니다.</div>`;filtered.forEach(e=>{const mc=e.mood==='bull'?'#FF3B30':e.mood==='bear'?'#007AFF':'#8E8E93';const ml=e.mood==='bull'?'🐂 강세':e.mood==='bear'?'🐻 약세':'🤔 관망';let snap='';if(e.portfolio?.items?.length>0)snap=`<div class="portfolio-snap"><div style="font-size:12px;color:var(--sub);margin-bottom:8px;font-weight:600;">📊 당시 자산 (${e.portfolio.total.toLocaleString()}원)</div>${e.portfolio.items.map(i=>`<div class="snap-row"><span>${i.name}</span><span>${i.amount.toLocaleString()}원</span></div>`).join('')}</div>`;const evtH=e.eventText?`<div style="font-size:13px;font-weight:700;color:#D08A00;background:#FFF5E1;padding:4px 8px;border-radius:6px;display:inline-block;margin-bottom:8px;">📌 ${e.eventText}</div>`:'';el.innerHTML+=`<div class="diary-card"><div class="diary-star ${e.isImportant?'filled':'empty'}" onclick="toggleImp(${e.id})">${e.isImportant?'⭐':'☆'}</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-right:30px;"><span style="font-size:11px;font-weight:700;color:${mc};background:${mc}18;padding:4px 8px;border-radius:6px;">${ml}</span><span style="font-size:13px;color:var(--sub);">${e.dateStr}</span></div>${evtH}<div style="font-size:15px;line-height:1.5;white-space:pre-wrap;margin-bottom:12px;">${e.content}</div>${snap}<div style="text-align:right;margin-top:12px;"><span style="font-size:12px;color:var(--blue);cursor:pointer;background:#F0F6FF;padding:4px 10px;border-radius:6px;margin-right:8px;" onclick="editDiary(${e.id})">수정</span><span style="font-size:12px;color:var(--sub);cursor:pointer;background:#F2F2F7;padding:4px 10px;border-radius:6px;" onclick="delDiary(${e.id})">삭제</span></div></div>`;});}
+function renderCal(){document.getElementById('calLabel').innerHTML=`${calY}년 ${calM+1}월 <span style="font-size:14px;color:#AAAAAA;cursor:pointer;" onclick="showCalPicker()">∨</span>`;const grid=document.getElementById('calGrid');grid.innerHTML='';const first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate();for(let i=0;i<first;i++)grid.innerHTML+=`<div></div>`;for(let d=1;d<=days;d++){const isToday=calY===TODAY.getFullYear()&&calM===TODAY.getMonth()&&d===TODAY.getDate();const isAct=selDate&&selDate.y===calY&&selDate.m===(calM+1)&&selDate.d===d;const entries=diaries.filter(e=>e.yyyy===calY&&e.mm===(calM+1)&&e.dd===d);const mood=entries.length>0?entries[0].mood:null;let circleHTML='';if(mood==='bull'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">😊</div>`;}else if(mood==='bear'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">😢</div>`;}else if(mood==='neutral'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🤔</div>`;}else{let cls='cal-circle';if(isToday)cls+=' c-today';else cls+=' c-empty';circleHTML=`<div class="${cls}"></div>`;}let evtBadge='';if(entries.length>0&&entries[0].eventText){const em=Array.from(entries[0].eventText.trim())[0]||'📌';evtBadge=`<span style="position:absolute;top:0;right:2px;font-size:10px;">${em}</span>`;}const numColor=isToday?'#656566':'#888';const numWeight=isToday?'700':'400';grid.innerHTML+=`<div style="text-align:center;padding:3px 0;cursor:pointer;position:relative;" onclick="applyDateFilter(${calY},${calM+1},${d})">${circleHTML}${evtBadge}<div style="font-size:11px;color:${numColor};font-weight:${numWeight};margin-top:2px;">${d}</div></div>`;}}
+function renderDiary(){const el=document.getElementById('diaryList');el.innerHTML='';let filtered=diaries;if(filterMode==='important')filtered=diaries.filter(e=>e.isImportant);else if(filterMode==='bull')filtered=diaries.filter(e=>e.mood==='bull');else if(filterMode==='bear')filtered=diaries.filter(e=>e.mood==='bear');else if(filterMode==='neutral')filtered=diaries.filter(e=>e.mood==='neutral');else if(filterMode==='date'&&selDate)filtered=diaries.filter(e=>e.yyyy===selDate.y&&e.mm===selDate.m&&e.dd===selDate.d);if(!filtered.length)return el.innerHTML=`<div style="text-align:center;color:var(--sub);padding:30px 0;font-size:14px;">기록이 없습니다.</div>`;filtered.forEach(e=>{const mc=e.mood==='bull'?'#FF3B30':e.mood==='bear'?'#007AFF':'#8E8E93';const ml=e.mood==='bull'?'😊 강세':e.mood==='bear'?'😢 약세':'🤔 관망';let snap='';if(e.portfolio?.items?.length>0)snap=`<div class="portfolio-snap"><div style="font-size:12px;color:var(--sub);margin-bottom:8px;font-weight:600;">📊 당시 자산 (${e.portfolio.total.toLocaleString()}원)</div>${e.portfolio.items.map(i=>`<div class="snap-row"><span>${i.name}</span><span>${i.amount.toLocaleString()}원</span></div>`).join('')}</div>`;const evtH=e.eventText?`<div style="font-size:13px;font-weight:700;color:#D08A00;background:#FFF5E1;padding:4px 8px;border-radius:6px;display:inline-block;margin-bottom:8px;">📌 ${e.eventText}</div>`:'';el.innerHTML+=`<div class="diary-card"><div class="diary-star ${e.isImportant?'filled':'empty'}" onclick="toggleImp(${e.id})">${e.isImportant?'⭐':'☆'}</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-right:30px;"><span style="font-size:11px;font-weight:700;color:${mc};background:${mc}18;padding:4px 8px;border-radius:6px;">${ml}</span><span style="font-size:13px;color:var(--sub);">${e.dateStr}</span></div>${evtH}<div style="font-size:15px;line-height:1.6;word-break:break-word;margin-bottom:12px;">${e.content&&e.content.includes('<')?e.content:e.content.replace(/\n/g,'<br>')}</div>${snap}<div style="text-align:right;margin-top:12px;"><span style="font-size:12px;color:var(--blue);cursor:pointer;background:#F0F6FF;padding:4px 10px;border-radius:6px;margin-right:8px;" onclick="editDiary(${e.id})">수정</span><span style="font-size:12px;color:var(--sub);cursor:pointer;background:#F2F2F7;padding:4px 10px;border-radius:6px;" onclick="delDiary(${e.id})">삭제</span></div></div>`;});}
+function fmt(cmd){document.execCommand(cmd,false,null);}
+function fmtBullet(){document.getElementById('diaryContent').focus();document.execCommand('insertUnorderedList',false,null);}
+function fmtCheck(){document.getElementById('diaryContent').focus();document.execCommand('insertHTML',false,'<div class="check-item" onclick="toggleCheck(this)"><span class="ci">☐</span> <span></span></div><br>');}
+function toggleCheck(el){el.classList.toggle('done');el.querySelector('.ci').innerText=el.classList.contains('done')?'☑':'☐';}
 function toggleImp(id){const e=diaries.find(d=>d.id===id);if(e){e.isImportant=!e.isImportant;localStorage.setItem('my_diary_v13',JSON.stringify(diaries));renderDiary();}}
 function editDiary(id){const e=diaries.find(d=>d.id===id);if(!e)return;applyDateFilter(e.yyyy,e.mm,e.dd);}
 function delDiary(id){if(confirm('삭제할까요?')){diaries=diaries.filter(e=>e.id!==id);localStorage.setItem('my_diary_v13',JSON.stringify(diaries));renderCal();renderDiary();}}
-function openMemo(idx){memoIdx=idx;const item=assets[idx];const key=item.cat+'_'+item.name;document.getElementById('memoInput').value=memos[key]||'';document.getElementById('memoTitle').innerText=item.name+' 메모';document.getElementById('memoModal').style.display='flex';}
-function saveMemo(){const key=memoIdx>=0?(assets[memoIdx].cat+'_'+assets[memoIdx].name):memoCatKey;if(!key)return;const val=document.getElementById('memoInput').value.trim();if(val)memos[key]=val;else delete memos[key];localStorage.setItem('my_asset_memos',JSON.stringify(memos));closeMemoModal();toast('메모 저장됨');render();}
-function closeMemoModal(){document.getElementById('memoModal').style.display='none';memoIdx=-1;memoCatKey='';}
-function openCatMemo(cat){memoCatKey='__cat__'+cat;memoIdx=-1;const catLabels={주식:'📈 주식',코인:'🪙 코인',현금:'💵 현금',적금:'🏦 적금'};document.getElementById('memoInput').value=memos[memoCatKey]||'';document.getElementById('memoTitle').innerText=(catLabels[cat]||cat)+' 메모';document.getElementById('memoModal').style.display='flex';}
+function openMemo(idx){memoIdx=idx;memoCatKey='';const item=assets[idx];const key=item.cat+'_'+item.name;const c=memos[key]||'';document.getElementById('memoPageTitle').innerText=item.name+' 메모';document.getElementById('memoPageContent').innerHTML=c&&c.includes('<')?c:c.replace(/\n/g,'<br>');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-memo').classList.add('active');document.getElementById('fabAdd').style.display='none';window.scrollTo({top:0,behavior:'smooth'});}
+function openCatMemo(cat){memoCatKey='__cat__'+cat;memoIdx=-1;const catLabels={주식:'📈 주식',코인:'🪙 코인',현금:'💵 현금',적금:'🏦 적금'};const c=memos[memoCatKey]||'';document.getElementById('memoPageTitle').innerText=(catLabels[cat]||cat)+' 메모';document.getElementById('memoPageContent').innerHTML=c&&c.includes('<')?c:c.replace(/\n/g,'<br>');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-memo').classList.add('active');document.getElementById('fabAdd').style.display='none';window.scrollTo({top:0,behavior:'smooth'});}
+function saveMemoPage(){const key=memoIdx>=0?(assets[memoIdx].cat+'_'+assets[memoIdx].name):memoCatKey;if(!key)return;const el=document.getElementById('memoPageContent');const val=el.innerHTML.trim();if(el.innerText.trim())memos[key]=val;else delete memos[key];localStorage.setItem('my_asset_memos',JSON.stringify(memos));closeMemoPage();toast('메모 저장됨');}
+function closeMemoPage(){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-portfolio').classList.add('active');document.getElementById('fabAdd').style.display='flex';render();window.scrollTo({top:0,behavior:'smooth'});}
+function openAddModal(){adjustPlaceholder();document.getElementById('addModal').style.display='flex';}
+function closeAddModal(){document.getElementById('addModal').style.display='none';document.getElementById('newName').value='';document.getElementById('newVal').value='';}
 function startLongPress(idx){longPressTriggered=false;longPressTimer=setTimeout(()=>{longPressTriggered=true;openMemo(idx);},400);}
 function startCatLongPress(cat){longPressTriggered=false;longPressTimer=setTimeout(()=>{longPressTriggered=true;openCatMemo(cat);},400);}
 function endLongPress(){clearTimeout(longPressTimer);}
 function handleItemClick(idx){if(longPressTriggered){longPressTriggered=false;return;}openEdit(idx);}
-function closeMemoModalBg(e){if(e.target===document.getElementById('memoModal'))closeMemoModal();}
 
 // ===== 플랜 =====
 function renderRatios(){const c=document.getElementById('ratioContainer');c.innerHTML='';ratios.forEach((item,i)=>{const d=document.createElement('div');d.className='ratio-item';d.innerHTML=`<input type="text" placeholder="투자 항목" value="${item.name}" oninput="ratios[${i}].name=this.value;saveRatios();calcPlan()"><input type="tel" placeholder="%" value="${item.ratio}" style="flex:1;text-align:center;" oninput="fmtNum(this);ratios[${i}].ratio=raw(this.value);saveRatios();calcPlan();">${ratios.length>1?`<button class="ratio-remove" onclick="rmRatio(${i})">삭제</button>`:''}`; c.appendChild(d);});}
