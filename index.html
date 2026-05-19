@@ -6,6 +6,9 @@
     <title>자산 관리 Pro v20</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <style>
         :root {
             --bg: #F2F2F7; --card: #FFFFFF; --main: #000000; --sub: #8E8E93;
@@ -137,7 +140,10 @@
 </head>
 <body>
 <div id="toast"></div>
-<div class="header"><h1 id="pageTitle">자산 현황</h1></div>
+<div class="header" style="display:flex;align-items:center;justify-content:space-between;padding-right:16px;">
+  <h1 id="pageTitle">자산 현황</h1>
+  <button id="loginBtn" onclick="handleLogin()" style="background:#F2F2F7;border:none;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;color:#1C1C1E;display:flex;align-items:center;gap:6px;white-space:nowrap;">로그인</button>
+</div>
 
 <!-- 자산 탭 -->
 <div id="view-portfolio" class="view active">
@@ -432,6 +438,7 @@ function saveSnap(total){
     history.sort((a,b)=>a.date.localeCompare(b.date));
     if(history.length>60) history=history.slice(-60);
     localStorage.setItem('my_asset_history',JSON.stringify(history));
+    saveToFirestore();
 }
 function renderHistChart(){
     if(histChart){histChart.destroy();histChart=null;}
@@ -764,10 +771,10 @@ function openEdit(idx){
 function closeEdit(){document.getElementById('editModal').style.display='none';document.getElementById('mInput').value='';}
 function trade(type){const v=raw(document.getElementById('mInput').value);if(!document.getElementById('mInput').value)return;const item=assets[selIdx];const isM=(item.cat==='주식'||item.cat==='코인');if(type==='set'){if(isM)item.qty=v;else item.amount=v;}else if(type==='buy'){if(isM)item.qty+=v;else item.amount+=v;}else{if(isM)item.qty-=v;else item.amount-=v;}if(item.qty<0)item.qty=0;if(item.amount<0)item.amount=0;saveAssets();closeEdit();}
 function delAsset(){if(confirm('삭제할까요?')){assets.splice(selIdx,1);saveAssets();closeEdit();}}
-function saveAssets(){localStorage.setItem('my_assets_v10',JSON.stringify(assets));render();}
+function saveAssets(){localStorage.setItem('my_assets_v10',JSON.stringify(assets));saveToFirestore();render();}
 function openGoalModal(){document.getElementById('goalInput').value=GOAL.toLocaleString();document.getElementById('goalModal').style.display='flex';}
 function closeGoalModal(){document.getElementById('goalModal').style.display='none';}
-function saveGoal(){const v=raw(document.getElementById('goalInput').value);if(v>0){GOAL=v;localStorage.setItem('my_goal_v10',GOAL);render();closeGoalModal();}}
+function saveGoal(){const v=raw(document.getElementById('goalInput').value);if(v>0){GOAL=v;localStorage.setItem('my_goal_v10',GOAL);saveToFirestore();render();closeGoalModal();}}
 
 // ===== 일기 =====
 function setMood(m,btn){mood=m;document.querySelectorAll('#view-diary-write .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
@@ -775,7 +782,7 @@ function toggleImportantStar(){const cb=document.getElementById('diaryImportant'
 function addEvt(t){const el=document.getElementById('diaryEvent');el.value=el.value?el.value+', '+t:t;}
 function updateDiaryLabel(){const lbl=document.getElementById('diaryDateLabel'),btn=document.getElementById('diaryBtn');if(selDate){const{y,m,d}=selDate;lbl.innerText=`${y}.${String(m).padStart(2,'0')}.${String(d).padStart(2,'0')}`;const ex=diaries.find(e=>e.yyyy===y&&e.mm===m&&e.dd===d);if(ex){editId=ex.id;document.getElementById('diaryContent').value=ex.content;document.getElementById('diaryEvent').value=ex.eventText||'';mood=ex.mood;document.getElementById('diaryImportant').checked=ex.isImportant;document.querySelectorAll('#view-diary .seg-btn').forEach(b=>b.classList.remove('active'));document.getElementById('mood-'+mood).classList.add('active');btn.innerText='수정 & 백업';}else{editId=null;document.getElementById('diaryContent').value='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;btn.innerText='저장 & 백업';}}else{lbl.innerText='오늘';btn.innerText='저장 & 백업';}}
 function getSnap(){const s={total:0,items:[]};assets.forEach(i=>{s.total+=krw(i);if(krw(i)>0)s.items.push({name:i.name,amount:krw(i)});});s.items.sort((a,b)=>b.amount-a.amount);return s;}
-function saveDiary(){const de=document.getElementById('diaryContent'),content=de.innerHTML.trim(),evt=document.getElementById('diaryEvent').value.trim();if(!de.innerText.trim()&&!evt)return toast('내용이나 일정을 입력해주세요.');const imp=document.getElementById('diaryImportant').checked;let yy,mm,dd;if(selDate){yy=selDate.y;mm=selDate.m;dd=selDate.d;}else{const n=new Date();yy=n.getFullYear();mm=n.getMonth()+1;dd=n.getDate();}const ds=`${yy}.${String(mm).padStart(2,'0')}.${String(dd).padStart(2,'0')}`;const snap=getSnap();diaries=diaries.filter(e=>!(e.yyyy===yy&&e.mm===mm&&e.dd===dd));diaries.unshift({id:editId||Date.now(),yyyy:yy,mm:mm,dd:dd,dateStr:ds,content,mood,isImportant:imp,portfolio:snap,eventText:evt});localStorage.setItem('my_diary_v13',JSON.stringify(diaries));document.getElementById('diaryContent').innerHTML='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;selDate=null;editId=null;closeDiaryWrite();if(DIARY_API){const p=new URLSearchParams();p.append('date',ds);p.append('mood',mood==='bull'?'😊 강세':mood==='bear'?'😢 약세':'🤔 관망');p.append('important',imp?'O':'X');p.append('content',(evt?'[일정: '+evt+']\n':'')+content);p.append('total_amount',snap.total.toLocaleString()+'원');fetch(DIARY_API+'?'+p.toString()).then(()=>toast('✅ 저장 & 시트 동기화!')).catch(()=>toast('앱 저장 완료'));}else toast('✅ 저장되었습니다.');}
+function saveDiary(){const de=document.getElementById('diaryContent'),content=de.innerHTML.trim(),evt=document.getElementById('diaryEvent').value.trim();if(!de.innerText.trim()&&!evt)return toast('내용이나 일정을 입력해주세요.');const imp=document.getElementById('diaryImportant').checked;let yy,mm,dd;if(selDate){yy=selDate.y;mm=selDate.m;dd=selDate.d;}else{const n=new Date();yy=n.getFullYear();mm=n.getMonth()+1;dd=n.getDate();}const ds=`${yy}.${String(mm).padStart(2,'0')}.${String(dd).padStart(2,'0')}`;const snap=getSnap();diaries=diaries.filter(e=>!(e.yyyy===yy&&e.mm===mm&&e.dd===dd));diaries.unshift({id:editId||Date.now(),yyyy:yy,mm:mm,dd:dd,dateStr:ds,content,mood,isImportant:imp,portfolio:snap,eventText:evt});localStorage.setItem('my_diary_v13',JSON.stringify(diaries));saveToFirestore();document.getElementById('diaryContent').innerHTML='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;selDate=null;editId=null;closeDiaryWrite();if(DIARY_API){const p=new URLSearchParams();p.append('date',ds);p.append('mood',mood==='bull'?'😊 강세':mood==='bear'?'😢 약세':'🤔 관망');p.append('important',imp?'O':'X');p.append('content',(evt?'[일정: '+evt+']\n':'')+content);p.append('total_amount',snap.total.toLocaleString()+'원');fetch(DIARY_API+'?'+p.toString()).then(()=>toast('✅ 저장 & 시트 동기화!')).catch(()=>toast('앱 저장 완료'));}else toast('✅ 저장되었습니다.');}
 function applyFilter(type,btn){filterMode=type;document.querySelectorAll('.filter-bar .chip').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderDiary();}
 function applyDateFilter(y,m,d){
     selDate={y,m,d};editId=null;
@@ -869,12 +876,12 @@ function fmt(cmd){document.execCommand(cmd,false,null);}
 function fmtBullet(){document.getElementById('diaryContent').focus();document.execCommand('insertUnorderedList',false,null);}
 function fmtCheck(){document.getElementById('diaryContent').focus();document.execCommand('insertHTML',false,'<div class="check-item" onclick="toggleCheck(this)"><span class="ci">☐</span> <span></span></div><br>');}
 function toggleCheck(el){el.classList.toggle('done');el.querySelector('.ci').innerText=el.classList.contains('done')?'☑':'☐';}
-function toggleImp(id){const e=diaries.find(d=>d.id===id);if(e){e.isImportant=!e.isImportant;localStorage.setItem('my_diary_v13',JSON.stringify(diaries));renderDiary();}}
+function toggleImp(id){const e=diaries.find(d=>d.id===id);if(e){e.isImportant=!e.isImportant;localStorage.setItem('my_diary_v13',JSON.stringify(diaries));saveToFirestore();renderDiary();}}
 function editDiary(id){const e=diaries.find(d=>d.id===id);if(!e)return;applyDateFilter(e.yyyy,e.mm,e.dd);}
-function delDiary(id){if(confirm('삭제할까요?')){diaries=diaries.filter(e=>e.id!==id);localStorage.setItem('my_diary_v13',JSON.stringify(diaries));renderCal();renderDiary();}}
+function delDiary(id){if(confirm('삭제할까요?')){diaries=diaries.filter(e=>e.id!==id);localStorage.setItem('my_diary_v13',JSON.stringify(diaries));saveToFirestore();renderCal();renderDiary();}}
 function openMemo(idx){memoIdx=idx;memoCatKey='';const item=assets[idx];const key=item.cat+'_'+item.name;const c=memos[key]||'';document.getElementById('memoPageTitle').innerText=item.name+' 메모';document.getElementById('memoPageContent').innerHTML=c&&c.includes('<')?c:c.replace(/\n/g,'<br>');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-memo').classList.add('active');document.getElementById('fabAdd').style.display='none';window.scrollTo({top:0,behavior:'smooth'});}
 function openCatMemo(cat){memoCatKey='__cat__'+cat;memoIdx=-1;const catLabels={주식:'📈 주식',코인:'🪙 코인',현금:'💵 현금',적금:'🏦 적금'};const c=memos[memoCatKey]||'';document.getElementById('memoPageTitle').innerText=(catLabels[cat]||cat)+' 메모';document.getElementById('memoPageContent').innerHTML=c&&c.includes('<')?c:c.replace(/\n/g,'<br>');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-memo').classList.add('active');document.getElementById('fabAdd').style.display='none';window.scrollTo({top:0,behavior:'smooth'});}
-function saveMemoPage(){const key=memoIdx>=0?(assets[memoIdx].cat+'_'+assets[memoIdx].name):memoCatKey;if(!key)return;const el=document.getElementById('memoPageContent');const val=el.innerHTML.trim();if(el.innerText.trim())memos[key]=val;else delete memos[key];localStorage.setItem('my_asset_memos',JSON.stringify(memos));closeMemoPage();toast('메모 저장됨');}
+function saveMemoPage(){const key=memoIdx>=0?(assets[memoIdx].cat+'_'+assets[memoIdx].name):memoCatKey;if(!key)return;const el=document.getElementById('memoPageContent');const val=el.innerHTML.trim();if(el.innerText.trim())memos[key]=val;else delete memos[key];localStorage.setItem('my_asset_memos',JSON.stringify(memos));saveToFirestore();closeMemoPage();toast('메모 저장됨');}
 function closeMemoPage(){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-portfolio').classList.add('active');document.getElementById('fabAdd').style.display='flex';render();window.scrollTo({top:0,behavior:'smooth'});}
 function openAddModal(){adjustPlaceholder();document.getElementById('addModal').style.display='flex';}
 function closeAddModal(){document.getElementById('addModal').style.display='none';document.getElementById('newName').value='';document.getElementById('newVal').value='';}
@@ -887,9 +894,77 @@ function handleItemClick(idx){if(longPressTriggered){longPressTriggered=false;re
 function renderRatios(){const c=document.getElementById('ratioContainer');c.innerHTML='';ratios.forEach((item,i)=>{const d=document.createElement('div');d.className='ratio-item';d.innerHTML=`<input type="text" placeholder="투자 항목" value="${item.name}" oninput="ratios[${i}].name=this.value;saveRatios();calcPlan()"><input type="tel" placeholder="%" value="${item.ratio}" style="flex:1;text-align:center;" oninput="fmtNum(this);ratios[${i}].ratio=raw(this.value);saveRatios();calcPlan();">${ratios.length>1?`<button class="ratio-remove" onclick="rmRatio(${i})">삭제</button>`:''}`; c.appendChild(d);});}
 function addRatio(){ratios.push({name:'새 항목',ratio:0});saveRatios();renderRatios();calcPlan();}
 function rmRatio(i){if(ratios.length>1){ratios.splice(i,1);saveRatios();renderRatios();calcPlan();}}
-function saveRatios(){localStorage.setItem('my_invest_ratios',JSON.stringify(ratios));}
+function saveRatios(){localStorage.setItem('my_invest_ratios',JSON.stringify(ratios));saveToFirestore();}
 function calcPlan(){const s=raw(document.getElementById('plan_s').value),l=raw(document.getElementById('plan_l').value),f=raw(document.getElementById('plan_fixed').value),inv=Math.max(0,s-l-f);document.getElementById('fixedDisplay').innerText='-'+f.toLocaleString()+'원';document.getElementById('investable').innerText=inv.toLocaleString()+'원';const tr=ratios.reduce((a,r)=>a+r.ratio,0),res=document.getElementById('ratioResults');res.innerHTML='';ratios.forEach(r=>{const a=tr>0?Math.floor(inv*(r.ratio/tr)):0;const d=document.createElement('div');d.style.cssText='display:flex;justify-content:space-between;margin-bottom:6px;';d.innerHTML=`<span style="font-size:13px;">${r.name}</span><span style="font-size:14px;font-weight:600;">${a.toLocaleString()}원</span>`;res.appendChild(d);});}
 function saveDiaryApi(){DIARY_API=document.getElementById('diaryApiUrl').value.trim();localStorage.setItem('my_diary_api',DIARY_API);toast('✅ 백업 URL 저장 완료');}
+
+// ===== Firebase =====
+const firebaseConfig = {
+  apiKey: "AIzaSyBhcvoBz2ptDNGHWCNMnY59MlcievCd0GA",
+  authDomain: "portfolio-lti.firebaseapp.com",
+  projectId: "portfolio-lti",
+  storageBucket: "portfolio-lti.firebasestorage.app",
+  messagingSenderId: "676495324429",
+  appId: "1:676495324429:web:da72dbb7b06794cac82c44"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+let currentUser = null;
+
+async function handleLogin(){
+  if(currentUser){
+    if(confirm('로그아웃 할까요?')) await auth.signOut();
+  } else {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    try { await auth.signInWithPopup(provider); }
+    catch(e) { toast('로그인 실패'); }
+  }
+}
+
+async function saveToFirestore(){
+  if(!currentUser) return;
+  try {
+    await db.collection('users').doc(currentUser.uid).set({
+      assets, diaries, memos, goal: GOAL, ratios, history
+    });
+  } catch(e) { console.error('Firestore 저장 실패', e); }
+}
+
+async function loadFromFirestore(){
+  if(!currentUser) return;
+  try {
+    const doc = await db.collection('users').doc(currentUser.uid).get();
+    if(doc.exists){
+      const d = doc.data();
+      if(Array.isArray(d.assets)){ assets=d.assets; localStorage.setItem('my_assets_v10',JSON.stringify(assets)); }
+      if(Array.isArray(d.diaries)){ diaries=d.diaries; localStorage.setItem('my_diary_v13',JSON.stringify(diaries)); }
+      if(d.memos){ memos=d.memos; localStorage.setItem('my_asset_memos',JSON.stringify(memos)); }
+      if(d.goal){ GOAL=d.goal; localStorage.setItem('my_goal_v10',GOAL); }
+      if(Array.isArray(d.ratios)&&d.ratios.length){ ratios=d.ratios; localStorage.setItem('my_invest_ratios',JSON.stringify(ratios)); }
+      if(Array.isArray(d.history)){ history=d.history; localStorage.setItem('my_asset_history',JSON.stringify(history)); }
+      render(); renderCal(); renderDiary(); renderRatios(); calcPlan();
+      toast('☁️ 동기화 완료');
+    } else {
+      saveToFirestore();
+    }
+  } catch(e) { toast('동기화 실패'); }
+}
+
+auth.onAuthStateChanged(user => {
+  currentUser = user;
+  const btn = document.getElementById('loginBtn');
+  if(!btn) return;
+  if(user){
+    const name = user.displayName ? user.displayName.split(' ')[0] : '사용자';
+    btn.innerHTML = user.photoURL
+      ? `<img src="${user.photoURL}" style="width:20px;height:20px;border-radius:50%;">${name}`
+      : name;
+    loadFromFirestore();
+  } else {
+    btn.innerHTML = '로그인';
+  }
+});
 
 // ===== 초기화 =====
 window.onload=()=>{
