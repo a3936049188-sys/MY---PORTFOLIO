@@ -938,13 +938,16 @@ async function loadFromFirestore(){
     const doc = await db.collection('users').doc(currentUser.uid).get();
     if(doc.exists){
       const d = doc.data();
-      if(Array.isArray(d.assets)){ assets=d.assets; localStorage.setItem('my_assets_v10',JSON.stringify(assets)); }
-      if(Array.isArray(d.diaries)){ diaries=d.diaries; localStorage.setItem('my_diary_v13',JSON.stringify(diaries)); }
-      if(d.memos){ memos=d.memos; localStorage.setItem('my_asset_memos',JSON.stringify(memos)); }
+      // Firestore 데이터가 로컬보다 많을 때만 덮어씀 (빈 데이터로 덮어쓰기 방지)
+      if(Array.isArray(d.assets)&&(d.assets.length>=assets.length)){ assets=d.assets; localStorage.setItem('my_assets_v10',JSON.stringify(assets)); }
+      if(Array.isArray(d.diaries)&&(d.diaries.length>=diaries.length)){ diaries=d.diaries; localStorage.setItem('my_diary_v13',JSON.stringify(diaries)); }
+      if(d.memos&&Object.keys(d.memos).length>=Object.keys(memos).length){ memos=d.memos; localStorage.setItem('my_asset_memos',JSON.stringify(memos)); }
       if(d.goal){ GOAL=d.goal; localStorage.setItem('my_goal_v10',GOAL); }
       if(Array.isArray(d.ratios)&&d.ratios.length){ ratios=d.ratios; localStorage.setItem('my_invest_ratios',JSON.stringify(ratios)); }
-      if(Array.isArray(d.history)){ history=d.history; localStorage.setItem('my_asset_history',JSON.stringify(history)); }
+      if(Array.isArray(d.history)&&(d.history.length>=history.length)){ history=d.history; localStorage.setItem('my_asset_history',JSON.stringify(history)); }
       loaded = true;
+      // 로컬이 더 많으면 Firestore에 업로드
+      if(!d.assets||d.assets.length<assets.length) saveToFirestore();
     } else {
       saveToFirestore();
     }
