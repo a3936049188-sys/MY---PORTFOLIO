@@ -378,7 +378,7 @@ let GOAL=Number(localStorage.getItem('my_goal_v10'))||100000000;
 let DIARY_API=localStorage.getItem('my_diary_api')||'';
 let mood='bull', filterMode='all';
 const TODAY=new Date(); let calY=TODAY.getFullYear(), calM=TODAY.getMonth();
-let selDate=null, editId=null, catState={};
+let selDate=null, editId=null, catState={}, drillCat=null;
 let memos={}; try{const s=localStorage.getItem('my_asset_memos');if(s)memos=JSON.parse(s);}catch(e){memos={};}
 let memoIdx=-1;
 let memoCatKey='';
@@ -505,7 +505,7 @@ function render(){
             +'<span onclick="if(longPressTriggered){longPressTriggered=false;event.stopPropagation();}" onmousedown="startCatLongPress(\''+cat+'\')" onmouseup="endLongPress()" onmouseleave="endLongPress()" ontouchstart="startCatLongPress(\''+cat+'\')" ontouchend="endLongPress()" ontouchmove="endLongPress()" style="color:'+COLOR[cat]+';">'+catLabel+'</span>'
             +'<div style="display:flex;align-items:center;gap:10px;">'
             +'<span style="font-size:12px;color:var(--blue);font-weight:600;">'+totalDisp+'</span>'
-            +'<span style="font-size:12px;color:var(--sub);">'+(isOpen?'▼':'▶')+'</span>'
+            +'<span style="font-size:12px;color:'+(drillCat===cat?COLOR[cat]:'var(--sub)')+';font-weight:'+(drillCat===cat?'700':'400')+';"> '+(drillCat===cat?'▼ 보는 중':'▼')+'</span>'
             +'</div></div>'
             +'<div class="cat-items '+(isOpen?'open':'closed')+'" id="cat-'+cat+'">';
 
@@ -546,9 +546,21 @@ function render(){
     document.getElementById('totalAmt').innerText=Math.floor(total).toLocaleString()+'원';
 
     if(pieChart) pieChart.destroy();
-    if(outerD.length>0&&chartMode==='pie'){
+    if(chartMode==='pie'){
         try{
-            pieChart=new Chart(document.getElementById('pieChart'),{type:'doughnut',data:{datasets:[{data:outerD,backgroundColor:outerC,labels:outerL,borderWidth:2,borderColor:'#fff',weight:2},{data:innerD,backgroundColor:innerC,labels:innerL,borderWidth:2,borderColor:'#fff',weight:1}]},options:{maintainAspectRatio:false,cutout:'40%',plugins:{legend:{display:false},datalabels:{color:'#fff',font:{size:12,weight:'bold'},formatter:(v,ctx)=>{let sum=0;ctx.dataset.data.forEach(d=>sum+=d);const p=v*100/sum;if(ctx.datasetIndex===1)return p>=5?ctx.dataset.labels[ctx.dataIndex]:'';return p>=5?ctx.dataset.labels[ctx.dataIndex]+'\n'+p.toFixed(1)+'%':'';}},tooltip:{callbacks:{label:c=>c.dataset.labels[c.dataIndex]+': '+Math.floor(c.parsed).toLocaleString()+'원'}}}},plugins:[ChartDataLabels]});
+            if(drillCat){
+                const drillItems=assets.filter(i=>i.cat===drillCat&&krw(i)>0);
+                if(drillItems.length>0){
+                    const ca=BASE_COLORS[drillCat]||['#8E8E93'];
+                    const dL=drillItems.map(i=>i.name);
+                    const dD=drillItems.map(i=>krw(i));
+                    const dC=drillItems.map((_,idx)=>ca[idx%ca.length]);
+                    const dTotal=dD.reduce((s,v)=>s+v,0);
+                    pieChart=new Chart(document.getElementById('pieChart'),{type:'doughnut',data:{datasets:[{data:dD,backgroundColor:dC,labels:dL,borderWidth:2,borderColor:'#fff'}]},options:{maintainAspectRatio:false,cutout:'40%',plugins:{legend:{display:false},datalabels:{color:'#fff',font:{size:12,weight:'bold'},formatter:(v,ctx)=>{const p=v*100/dTotal;return p>=5?ctx.dataset.labels[ctx.dataIndex]+'\n'+p.toFixed(1)+'%':''}},tooltip:{callbacks:{label:c=>c.dataset.labels[c.dataIndex]+': '+Math.floor(c.parsed).toLocaleString()+'원'}}}},plugins:[ChartDataLabels]});
+                }
+            } else if(outerD.length>0){
+                pieChart=new Chart(document.getElementById('pieChart'),{type:'doughnut',data:{datasets:[{data:outerD,backgroundColor:outerC,labels:outerL,borderWidth:2,borderColor:'#fff',weight:2},{data:innerD,backgroundColor:innerC,labels:innerL,borderWidth:2,borderColor:'#fff',weight:1}]},options:{maintainAspectRatio:false,cutout:'40%',plugins:{legend:{display:false},datalabels:{color:'#fff',font:{size:12,weight:'bold'},formatter:(v,ctx)=>{let sum=0;ctx.dataset.data.forEach(d=>sum+=d);const p=v*100/sum;if(ctx.datasetIndex===1)return p>=5?ctx.dataset.labels[ctx.dataIndex]:'';return p>=5?ctx.dataset.labels[ctx.dataIndex]+'\n'+p.toFixed(1)+'%':'';}},tooltip:{callbacks:{label:c=>c.dataset.labels[c.dataIndex]+': '+Math.floor(c.parsed).toLocaleString()+'원'}}}},plugins:[ChartDataLabels]});
+            }
         }catch(e){}
     }
 }
@@ -758,7 +770,7 @@ function addAsset(){
     closeAddModal();
     toast('담겼습니다!');
 }
-function toggleCat(cat){const isOpen=catState[cat]!==false;catState[cat]=!isOpen;render();}
+function toggleCat(cat){drillCat=drillCat===cat?null:cat;window.scrollTo({top:0,behavior:'smooth'});render();}
 function openEdit(idx){
     selIdx=idx;
     const item=assets[idx];
@@ -781,7 +793,7 @@ function setMood(m,btn){mood=m;document.querySelectorAll('#view-diary-write .seg
 function toggleImportantStar(){const cb=document.getElementById('diaryImportant');cb.checked=!cb.checked;const s=document.getElementById('importantStar');s.innerText=cb.checked?'⭐':'☆';}
 function addEvt(t){const el=document.getElementById('diaryEvent');el.value=el.value?el.value+', '+t:t;}
 function updateDiaryLabel(){const lbl=document.getElementById('diaryDateLabel'),btn=document.getElementById('diaryBtn');if(!lbl||!btn)return;if(selDate){const{y,m,d}=selDate;lbl.innerText=`${y}.${String(m).padStart(2,'0')}.${String(d).padStart(2,'0')}`;const ex=diaries.find(e=>e.yyyy===y&&e.mm===m&&e.dd===d);if(ex){editId=ex.id;document.getElementById('diaryContent').value=ex.content;document.getElementById('diaryEvent').value=ex.eventText||'';mood=ex.mood;document.getElementById('diaryImportant').checked=ex.isImportant;document.querySelectorAll('#view-diary .seg-btn').forEach(b=>b.classList.remove('active'));document.getElementById('mood-'+mood).classList.add('active');btn.innerText='수정 & 백업';}else{editId=null;document.getElementById('diaryContent').value='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;btn.innerText='저장 & 백업';}}else{lbl.innerText='오늘';btn.innerText='저장 & 백업';}}
-function getSnap(){const s={total:0,items:[]};assets.forEach(i=>{s.total+=krw(i);if(krw(i)>0)s.items.push({name:i.name,amount:krw(i)});});s.items.sort((a,b)=>b.amount-a.amount);return s;}
+function getSnap(){const s={total:0,items:[]};assets.forEach(i=>{s.total+=krw(i);if(krw(i)>0)s.items.push({name:i.name,cat:i.cat,amount:krw(i),qty:i.qty||null});});s.items.sort((a,b)=>b.amount-a.amount);return s;}
 function saveDiary(){const de=document.getElementById('diaryContent'),content=de.innerHTML.trim(),evt=document.getElementById('diaryEvent').value.trim();if(!de.innerText.trim()&&!evt)return toast('내용이나 일정을 입력해주세요.');const imp=document.getElementById('diaryImportant').checked;let yy,mm,dd;if(selDate){yy=selDate.y;mm=selDate.m;dd=selDate.d;}else{const n=new Date();yy=n.getFullYear();mm=n.getMonth()+1;dd=n.getDate();}const ds=`${yy}.${String(mm).padStart(2,'0')}.${String(dd).padStart(2,'0')}`;const snap=getSnap();diaries=diaries.filter(e=>!(e.yyyy===yy&&e.mm===mm&&e.dd===dd));diaries.unshift({id:editId||Date.now(),yyyy:yy,mm:mm,dd:dd,dateStr:ds,content,mood,isImportant:imp,portfolio:snap,eventText:evt});localStorage.setItem('my_diary_v13',JSON.stringify(diaries));saveToFirestore();document.getElementById('diaryContent').innerHTML='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;selDate=null;editId=null;closeDiaryWrite();if(DIARY_API){const p=new URLSearchParams();p.append('date',ds);p.append('mood',mood==='bull'?'😊 강세':mood==='bear'?'😢 약세':'🤔 관망');p.append('important',imp?'O':'X');p.append('content',(evt?'[일정: '+evt+']\n':'')+content);p.append('total_amount',snap.total.toLocaleString()+'원');fetch(DIARY_API+'?'+p.toString()).then(()=>toast('✅ 저장 & 시트 동기화!')).catch(()=>toast('앱 저장 완료'));}else toast('✅ 저장되었습니다.');}
 function applyFilter(type,btn){filterMode=type;document.querySelectorAll('.filter-bar .chip').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderDiary();}
 function applyDateFilter(y,m,d){
@@ -799,29 +811,43 @@ function applyDateFilter(y,m,d){
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.getElementById('view-diary-write').classList.add('active');
     document.body.classList.add('diary-bg');
-    renderDiaryPortfolio();
+    renderDiaryPortfolio(ex?ex.portfolio:null, `${y}년 ${String(m).padStart(2,'0')}월 ${String(d).padStart(2,'0')}일`);
     window.scrollTo({top:0,behavior:'smooth'});
 }
-function renderDiaryPortfolio(){
+function renderDiaryPortfolio(snap, dateStr){
     const el=document.getElementById('diaryPortfolioSnap');
     if(!el)return;
-    const total=assets.reduce((s,i)=>s+krw(i),0);
-    if(!assets.length){el.innerHTML='<div style="color:#C7C7CC;font-size:13px;text-align:center;padding:8px 0;">보유 종목 없음</div>';return;}
-    const cats=[...new Set(assets.map(a=>a.cat))];
-    let html='<div style="font-size:12px;font-weight:700;color:#8E8E93;margin-bottom:6px;">오늘의 포트폴리오</div>';
-    cats.forEach(cat=>{
-        const catAssets=assets.filter(a=>a.cat===cat);
-        const catTotal=catAssets.reduce((s,i)=>s+krw(i),0);
-        const catPct=total>0?Math.round(catTotal/total*100):0;
-        html+=`<div style="font-size:12px;font-weight:600;color:#3A3A3C;margin:6px 0 3px;">${cat} <span style="color:#8E8E93;font-weight:400;">${catPct}%</span></div>`;
-        catAssets.forEach(item=>{
-            const amt=krw(item);
-            const pct=total>0?(amt/total*100).toFixed(1):0;
-            html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #F2F2F7;"><span style="font-size:13px;color:#1C1C1E;">${item.name}</span><span style="font-size:12px;color:#636366;">${amt.toLocaleString()}원 <span style="color:#8E8E93;">${pct}%</span></span></div>`;
+    const title=dateStr||'오늘';
+    if(snap&&snap.items&&snap.items.length>0){
+        // 기존 일기 수정 → 저장된 스냅샷 사용
+        let html=`<div style="font-size:12px;font-weight:700;color:#8E8E93;margin-bottom:6px;">${title} 포트폴리오</div>`;
+        snap.items.forEach(item=>{
+            const pct=snap.total>0?(item.amount/snap.total*100).toFixed(1):0;
+            const qtyStr=item.qty?(` · ${item.cat==='주식'?item.qty+'주':item.cat==='코인'?item.qty+'개':''}`):'';
+            html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #F2F2F7;"><span style="font-size:13px;color:#1C1C1E;">${item.name}<span style="font-size:11px;color:#8E8E93;">${qtyStr}</span></span><span style="font-size:12px;color:#636366;">${item.amount.toLocaleString()}원 <span style="color:#8E8E93;">${pct}%</span></span></div>`;
         });
-    });
-    html+=`<div style="display:flex;justify-content:space-between;padding-top:6px;font-size:12px;font-weight:700;color:#3A3A3C;"><span>총 자산</span><span>${total.toLocaleString()}원</span></div>`;
-    el.innerHTML=html;
+        html+=`<div style="display:flex;justify-content:space-between;padding-top:6px;font-size:12px;font-weight:700;color:#3A3A3C;"><span>총 자산</span><span>${snap.total.toLocaleString()}원</span></div>`;
+        el.innerHTML=html;
+    } else {
+        // 새 일기 → 현재 자산 사용
+        const total=assets.reduce((s,i)=>s+krw(i),0);
+        if(!assets.length){el.innerHTML='<div style="color:#C7C7CC;font-size:13px;text-align:center;padding:8px 0;">보유 종목 없음</div>';return;}
+        const cats=[...new Set(assets.map(a=>a.cat))];
+        let html=`<div style="font-size:12px;font-weight:700;color:#8E8E93;margin-bottom:6px;">${title} 포트폴리오</div>`;
+        cats.forEach(cat=>{
+            const catAssets=assets.filter(a=>a.cat===cat&&krw(a)>0);
+            if(!catAssets.length)return;
+            catAssets.forEach(item=>{
+                const amt=krw(item);
+                const pct=total>0?(amt/total*100).toFixed(1):0;
+                const isMarket=(item.cat==='주식'||item.cat==='코인');
+                const qtyStr=isMarket&&item.qty?` · ${item.cat==='주식'?item.qty+'주':item.qty+'개'}`:'';
+                html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #F2F2F7;"><span style="font-size:13px;color:#1C1C1E;">${item.name}<span style="font-size:11px;color:#8E8E93;">${qtyStr}</span></span><span style="font-size:12px;color:#636366;">${amt.toLocaleString()}원 <span style="color:#8E8E93;">${pct}%</span></span></div>`;
+            });
+        });
+        html+=`<div style="display:flex;justify-content:space-between;padding-top:6px;font-size:12px;font-weight:700;color:#3A3A3C;"><span>총 자산</span><span>${total.toLocaleString()}원</span></div>`;
+        el.innerHTML=html;
+    }
 }
 function closeDiaryWrite(){
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
