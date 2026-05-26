@@ -173,6 +173,16 @@
     <div id="assetList" class="card" style="padding-bottom:5px;"></div>
 </div>
 
+<!-- 폴더 페이지 -->
+<div id="view-folders" class="view">
+  <div style="display:flex;align-items:center;gap:12px;margin:20px 0 15px;">
+    <button onclick="closeFolders()" style="background:#F2F2F7;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">←</button>
+    <div style="font-size:20px;font-weight:800;flex:1;">메모 폴더</div>
+    <button onclick="createFolder()" style="background:var(--blue);color:#fff;border:none;border-radius:12px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;">+ 새 폴더</button>
+  </div>
+  <div id="folderList"></div>
+</div>
+
 <!-- 메모 페이지 -->
 <div id="view-memo" class="view">
     <div style="display:flex;align-items:center;gap:12px;margin:20px 0 15px;">
@@ -181,13 +191,18 @@
     </div>
     <div class="card">
         <div class="fmt-bar">
-            <button type="button" onmousedown="event.preventDefault();fmt('bold')" class="fmt-btn"><b>B</b></button>
-            <button type="button" onmousedown="event.preventDefault();fmt('italic')" class="fmt-btn"><i>I</i></button>
-            <button type="button" onmousedown="event.preventDefault();fmt('underline')" class="fmt-btn"><u>U</u></button>
-            <button type="button" onmousedown="event.preventDefault();fmt('strikeThrough')" class="fmt-btn" style="text-decoration:line-through;">S</button>
-            <button type="button" onmousedown="event.preventDefault();document.getElementById('memoPageContent').focus();document.execCommand('formatBlock',false,'h3')" class="fmt-btn">제목</button>
-            <button type="button" onmousedown="event.preventDefault();document.getElementById('memoPageContent').focus();document.execCommand('insertUnorderedList',false,null)" class="fmt-btn">• 목록</button>
-            <button type="button" onmousedown="event.preventDefault();document.getElementById('memoPageContent').focus();document.execCommand('insertHTML',false,'<div class=\'check-item\' onclick=\'toggleCheck(this)\'><span class=\'ci\'>☐</span> <span></span></div><br>')" class="fmt-btn">☑ 체크</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('bold')" class="fmt-btn"><b>B</b></button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('italic')" class="fmt-btn"><i>I</i></button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('underline')" class="fmt-btn"><u>U</u></button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('strikeThrough')" class="fmt-btn" style="text-decoration:line-through;">S</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemoBlock('h1')" class="fmt-btn" style="font-size:12px;font-weight:800;">제목</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemoBlock('h2')" class="fmt-btn" style="font-size:11px;font-weight:700;">소제목</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemoBlock('p')" class="fmt-btn" style="font-size:11px;">본문</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('insertUnorderedList')" class="fmt-btn">• 목록</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('insertOrderedList')" class="fmt-btn">1. 목록</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemoCheck()" class="fmt-btn">☑ 체크</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemoLink()" class="fmt-btn">🔗 링크</button>
+            <label class="fmt-btn" style="cursor:pointer;">📷<input type="file" accept="image/*" style="display:none;" onchange="fmtMemoPhoto(this)"></label>
         </div>
         <div contenteditable="true" id="memoPageContent" class="diary-editor" data-placeholder="메모를 입력하세요."></div>
         <button class="btn-primary" onclick="saveMemoPage()" style="margin-top:12px;">저장하기</button>
@@ -228,12 +243,18 @@
             <div id="diaryPortfolioSnap" style="background:#FAFAFA;padding:12px;border-radius:12px;border:1px solid #E5E5EA;max-height:220px;overflow-y:auto;"></div>
             <input type="hidden" id="diaryEvent" value="">
             <div class="fmt-bar">
-                <button type="button" onmousedown="event.preventDefault();fmt('bold')" class="fmt-btn"><b>B</b></button>
-                <button type="button" onmousedown="event.preventDefault();fmt('italic')" class="fmt-btn"><i>I</i></button>
-                <button type="button" onmousedown="event.preventDefault();fmt('underline')" class="fmt-btn"><u>U</u></button>
-                <button type="button" onmousedown="event.preventDefault();fmt('strikeThrough')" class="fmt-btn" style="text-decoration:line-through;">S</button>
-                <button type="button" onmousedown="event.preventDefault();fmtBullet()" class="fmt-btn">• 목록</button>
-                <button type="button" onmousedown="event.preventDefault();fmtCheck()" class="fmt-btn">☑ 체크</button>
+                <button type="button" onmousedown="event.preventDefault();fmtDiary('bold')" class="fmt-btn"><b>B</b></button>
+                <button type="button" onmousedown="event.preventDefault();fmtDiary('italic')" class="fmt-btn"><i>I</i></button>
+                <button type="button" onmousedown="event.preventDefault();fmtDiary('underline')" class="fmt-btn"><u>U</u></button>
+                <button type="button" onmousedown="event.preventDefault();fmtDiary('strikeThrough')" class="fmt-btn" style="text-decoration:line-through;">S</button>
+                <button type="button" onmousedown="event.preventDefault();fmtDiaryBlock('h1')" class="fmt-btn" style="font-size:12px;font-weight:800;">제목</button>
+                <button type="button" onmousedown="event.preventDefault();fmtDiaryBlock('h2')" class="fmt-btn" style="font-size:11px;font-weight:700;">소제목</button>
+                <button type="button" onmousedown="event.preventDefault();fmtDiaryBlock('p')" class="fmt-btn" style="font-size:11px;">본문</button>
+                <button type="button" onmousedown="event.preventDefault();fmtDiary('insertUnorderedList')" class="fmt-btn">• 목록</button>
+                <button type="button" onmousedown="event.preventDefault();fmtDiary('insertOrderedList')" class="fmt-btn">1. 목록</button>
+                <button type="button" onmousedown="event.preventDefault();fmtDiaryCheck()" class="fmt-btn">☑ 체크</button>
+                <button type="button" onmousedown="event.preventDefault();fmtDiaryLink()" class="fmt-btn">🔗 링크</button>
+                <label class="fmt-btn" style="cursor:pointer;">📷<input type="file" accept="image/*" style="display:none;" onchange="fmtDiaryPhoto(this)"></label>
             </div>
             <div contenteditable="true" id="diaryContent" class="diary-editor" data-placeholder="오늘 왜 매수/매도했나요?"></div>
         </div>
@@ -343,7 +364,20 @@
 </div></div>
 
 <!-- FAB -->
-<button id="fabAdd" onclick="openAddModal()" style="position:fixed;right:20px;bottom:85px;width:56px;height:56px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 16px rgba(0,122,255,0.4);z-index:9998;display:flex;align-items:center;justify-content:center;line-height:1;">+</button>
+<div id="fabAdd" style="position:fixed;right:20px;bottom:85px;z-index:9998;display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
+  <div id="fabOptions" style="display:none;flex-direction:column;gap:10px;align-items:flex-end;margin-bottom:4px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="background:#fff;padding:5px 14px;border-radius:16px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.12);white-space:nowrap;">자산 추가</span>
+      <button onclick="closeFab();openAddModal()" style="width:44px;height:44px;border-radius:50%;background:#34C759;border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(52,199,89,0.4);">＋</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="background:#fff;padding:5px 14px;border-radius:16px;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.12);white-space:nowrap;">폴더 보기</span>
+      <button onclick="closeFab();openFolders()" style="width:44px;height:44px;border-radius:50%;background:#5856D6;border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 10px rgba(88,86,214,0.4);">📁</button>
+    </div>
+  </div>
+  <button id="fabBtn" onclick="toggleFab()" style="width:56px;height:56px;border-radius:50%;background:var(--blue);color:#fff;border:none;font-size:28px;cursor:pointer;box-shadow:0 4px 16px rgba(0,122,255,0.4);display:flex;align-items:center;justify-content:center;line-height:1;transition:transform 0.2s;">+</button>
+</div>
+<div id="fabBackdrop" onclick="closeFab()" style="display:none;position:fixed;inset:0;z-index:9997;"></div>
 
 <!-- 재무 분석 모달 -->
 <div id="finModal" class="modal-bg" onclick="closeFin(event)"><div class="modal-box">
@@ -380,6 +414,7 @@ let mood='bull', filterMode='all';
 const TODAY=new Date(); let calY=TODAY.getFullYear(), calM=TODAY.getMonth();
 let selDate=null, editId=null, catState={}, drillCat=null;
 let memos={}; try{const s=localStorage.getItem('my_asset_memos');if(s)memos=JSON.parse(s);}catch(e){memos={};}
+let folders={}; try{const s=localStorage.getItem('my_memo_folders');if(s)folders=JSON.parse(s);}catch(e){folders={};}
 let memoIdx=-1;
 let memoCatKey='';
 let longPressTimer=null,longPressTriggered=false;
@@ -899,8 +934,20 @@ function changeMonth(s){calM+=s;if(calM<0){calM=11;calY--;}else if(calM>11){calM
 function renderCal(){document.getElementById('calLabel').innerHTML=`${calY}년 ${calM+1}월 <span style="font-size:14px;color:#AAAAAA;cursor:pointer;" onclick="showCalPicker()">∨</span>`;const grid=document.getElementById('calGrid');grid.innerHTML='';const first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate();for(let i=0;i<first;i++)grid.innerHTML+=`<div></div>`;for(let d=1;d<=days;d++){const isToday=calY===TODAY.getFullYear()&&calM===TODAY.getMonth()&&d===TODAY.getDate();const isAct=selDate&&selDate.y===calY&&selDate.m===(calM+1)&&selDate.d===d;const entries=diaries.filter(e=>e.yyyy===calY&&e.mm===(calM+1)&&e.dd===d);const mood=entries.length>0?entries[0].mood:null;let circleHTML='';if(mood==='bull'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">😊</div>`;}else if(mood==='bear'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">😢</div>`;}else if(mood==='neutral'){const bg='';circleHTML=`<div style="width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;${bg}">🤔</div>`;}else{let cls='cal-circle';if(isToday)cls+=' c-today';else cls+=' c-empty';circleHTML=`<div class="${cls}"></div>`;}let evtBadge='';if(entries.length>0&&entries[0].eventText){const em=Array.from(entries[0].eventText.trim())[0]||'📌';evtBadge=`<span style="position:absolute;top:0;right:2px;font-size:10px;">${em}</span>`;}const numColor=isToday?'#656566':'#888';const numWeight=isToday?'700':'400';grid.innerHTML+=`<div style="text-align:center;padding:3px 0;cursor:pointer;position:relative;" onclick="applyDateFilter(${calY},${calM+1},${d})">${circleHTML}${evtBadge}<div style="font-size:11px;color:${numColor};font-weight:${numWeight};margin-top:2px;">${d}</div></div>`;}}
 function renderDiary(){const el=document.getElementById('diaryList');if(!el)return;let filtered=diaries;if(filterMode==='important')filtered=diaries.filter(e=>e.isImportant);else if(filterMode==='bull')filtered=diaries.filter(e=>e.mood==='bull');else if(filterMode==='bear')filtered=diaries.filter(e=>e.mood==='bear');else if(filterMode==='neutral')filtered=diaries.filter(e=>e.mood==='neutral');else if(filterMode==='date'&&selDate)filtered=diaries.filter(e=>e.yyyy===selDate.y&&e.mm===selDate.m&&e.dd===selDate.d);if(!filtered.length)return el.innerHTML=`<div style="text-align:center;color:var(--sub);padding:30px 0;font-size:14px;">기록이 없습니다.</div>`;filtered.forEach(e=>{const mc=e.mood==='bull'?'#FF3B30':e.mood==='bear'?'#007AFF':'#8E8E93';const ml=e.mood==='bull'?'😊 강세':e.mood==='bear'?'😢 약세':'🤔 관망';let snap='';if(e.portfolio?.items?.length>0)snap=`<div class="portfolio-snap"><div style="font-size:12px;color:var(--sub);margin-bottom:8px;font-weight:600;">📊 당시 자산 (${e.portfolio.total.toLocaleString()}원)</div>${e.portfolio.items.map(i=>`<div class="snap-row"><span>${i.name}</span><span>${i.amount.toLocaleString()}원</span></div>`).join('')}</div>`;const evtH=e.eventText?`<div style="font-size:13px;font-weight:700;color:#D08A00;background:#FFF5E1;padding:4px 8px;border-radius:6px;display:inline-block;margin-bottom:8px;">📌 ${e.eventText}</div>`:'';el.innerHTML+=`<div class="diary-card"><div class="diary-star ${e.isImportant?'filled':'empty'}" onclick="toggleImp(${e.id})">${e.isImportant?'⭐':'☆'}</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-right:30px;"><span style="font-size:11px;font-weight:700;color:${mc};background:${mc}18;padding:4px 8px;border-radius:6px;">${ml}</span><span style="font-size:13px;color:var(--sub);">${e.dateStr}</span></div>${evtH}<div style="font-size:15px;line-height:1.6;word-break:break-word;margin-bottom:12px;">${e.content&&e.content.includes('<')?e.content:e.content.replace(/\n/g,'<br>')}</div>${snap}<div style="text-align:right;margin-top:12px;"><span style="font-size:12px;color:var(--blue);cursor:pointer;background:#F0F6FF;padding:4px 10px;border-radius:6px;margin-right:8px;" onclick="editDiary(${e.id})">수정</span><span style="font-size:12px;color:var(--sub);cursor:pointer;background:#F2F2F7;padding:4px 10px;border-radius:6px;" onclick="delDiary(${e.id})">삭제</span></div></div>`;});}
 function fmt(cmd){document.execCommand(cmd,false,null);}
-function fmtBullet(){document.getElementById('diaryContent').focus();document.execCommand('insertUnorderedList',false,null);}
-function fmtCheck(){document.getElementById('diaryContent').focus();document.execCommand('insertHTML',false,'<div class="check-item" onclick="toggleCheck(this)"><span class="ci">☐</span> <span></span></div><br>');}
+// 메모 서식
+function fmtMemo(cmd){document.getElementById('memoPageContent').focus();document.execCommand(cmd,false,null);}
+function fmtMemoBlock(tag){document.getElementById('memoPageContent').focus();document.execCommand('formatBlock',false,tag);}
+function fmtMemoCheck(){document.getElementById('memoPageContent').focus();document.execCommand('insertHTML',false,'<div class="check-item" onclick="toggleCheck(this)"><span class="ci">☐</span> <span></span></div><br>');}
+function fmtMemoLink(){const url=prompt('링크 주소를 입력하세요. (예: https://example.com)');if(!url)return;document.getElementById('memoPageContent').focus();document.execCommand('createLink',false,url);const links=document.getElementById('memoPageContent').querySelectorAll('a');links.forEach(a=>{a.target='_blank';a.rel='noopener';});}
+function fmtMemoPhoto(input){const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{document.getElementById('memoPageContent').focus();document.execCommand('insertHTML',false,`<img src="${e.target.result}" style="max-width:100%;border-radius:8px;margin:4px 0;">`)};reader.readAsDataURL(file);input.value='';}
+// 일기 서식
+function fmtDiary(cmd){document.getElementById('diaryContent').focus();document.execCommand(cmd,false,null);}
+function fmtDiaryBlock(tag){document.getElementById('diaryContent').focus();document.execCommand('formatBlock',false,tag);}
+function fmtDiaryCheck(){document.getElementById('diaryContent').focus();document.execCommand('insertHTML',false,'<div class="check-item" onclick="toggleCheck(this)"><span class="ci">☐</span> <span></span></div><br>');}
+function fmtDiaryLink(){const url=prompt('링크 주소를 입력하세요. (예: https://example.com)');if(!url)return;document.getElementById('diaryContent').focus();document.execCommand('createLink',false,url);const links=document.getElementById('diaryContent').querySelectorAll('a');links.forEach(a=>{a.target='_blank';a.rel='noopener';});}
+function fmtDiaryPhoto(input){const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{document.getElementById('diaryContent').focus();document.execCommand('insertHTML',false,`<img src="${e.target.result}" style="max-width:100%;border-radius:8px;margin:4px 0;">`)};reader.readAsDataURL(file);input.value='';}
+function fmtBullet(){fmtDiary('insertUnorderedList');}
+function fmtCheck(){fmtDiaryCheck();}
 function toggleCheck(el){el.classList.toggle('done');el.querySelector('.ci').innerText=el.classList.contains('done')?'☑':'☐';}
 function toggleImp(id){const e=diaries.find(d=>d.id===id);if(e){e.isImportant=!e.isImportant;localStorage.setItem('my_diary_v13',JSON.stringify(diaries));saveToFirestore();renderDiary();}}
 function editDiary(id){const e=diaries.find(d=>d.id===id);if(!e)return;applyDateFilter(e.yyyy,e.mm,e.dd);}
@@ -910,6 +957,102 @@ function openCatMemo(cat){memoCatKey='__cat__'+cat;memoIdx=-1;const catLabels={�
 function saveMemoPage(){const key=memoIdx>=0?(assets[memoIdx].cat+'_'+assets[memoIdx].name):memoCatKey;if(!key)return;const el=document.getElementById('memoPageContent');const val=el.innerHTML.trim();if(el.innerText.trim())memos[key]=val;else delete memos[key];localStorage.setItem('my_asset_memos',JSON.stringify(memos));saveToFirestore();closeMemoPage();toast('메모 저장됨');}
 function closeMemoPage(){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-portfolio').classList.add('active');document.getElementById('fabAdd').style.display='flex';render();window.scrollTo({top:0,behavior:'smooth'});}
 function openAddModal(){adjustPlaceholder();document.getElementById('addModal').style.display='flex';}
+
+// ===== FAB =====
+let fabOpen=false;
+function toggleFab(){fabOpen?closeFab():openFab();}
+function openFab(){fabOpen=true;document.getElementById('fabOptions').style.display='flex';document.getElementById('fabBackdrop').style.display='block';document.getElementById('fabBtn').style.transform='rotate(45deg)';}
+function closeFab(){fabOpen=false;document.getElementById('fabOptions').style.display='none';document.getElementById('fabBackdrop').style.display='none';document.getElementById('fabBtn').style.transform='rotate(0deg)';}
+
+// ===== 폴더 =====
+function saveFolders(){localStorage.setItem('my_memo_folders',JSON.stringify(folders));}
+function openFolders(){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-folders').classList.add('active');
+  document.getElementById('fabAdd').style.display='none';
+  renderFolders();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function closeFolders(){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-portfolio').classList.add('active');
+  document.getElementById('fabAdd').style.display='flex';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function createFolder(){
+  const name=prompt('폴더 이름을 입력해주세요.');
+  if(!name||!name.trim())return;
+  const n=name.trim();
+  if(folders[n])return toast('이미 있는 폴더예요.');
+  const colors=['#5856D6','#007AFF','#34C759','#FF9500','#FF3B30','#00C49F'];
+  folders[n]={color:colors[Object.keys(folders).length%colors.length],memoKeys:[]};
+  saveFolders();
+  renderFolders();
+}
+function deleteFolder(name){
+  if(!confirm(`"${name}" 폴더를 삭제할까요? (메모는 삭제되지 않아요.)`))return;
+  delete folders[name];
+  saveFolders();
+  renderFolders();
+}
+function getMemoLabel(key){
+  if(key.startsWith('__cat__')){const cat=key.replace('__cat__','');return{title:cat+' 카테고리',sub:'카테고리 메모'};}
+  const under=key.indexOf('_');
+  if(under>=0){const cat=key.substring(0,under),name=key.substring(under+1);return{title:name,sub:cat};}
+  return{title:key,sub:''};
+}
+function openMemoByKey(key){
+  if(key.startsWith('__cat__')){const cat=key.replace('__cat__','');memoCatKey=key;memoIdx=-1;document.getElementById('memoPageTitle').innerText=cat+' 카테고리 메모';const c=memos[key]||'';document.getElementById('memoPageContent').innerHTML=c&&c.includes('<')?c:c.replace(/\n/g,'<br>');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-memo').classList.add('active');window.scrollTo({top:0,behavior:'smooth'});return;}
+  const under=key.indexOf('_');if(under<0)return;
+  const cat=key.substring(0,under),name=key.substring(under+1);
+  const idx=assets.findIndex(a=>a.cat===cat&&a.name===name);
+  if(idx<0)return toast('종목을 찾을 수 없어요.');
+  openMemo(idx);
+}
+function assignToFolder(memoKey,folderName){
+  Object.keys(folders).forEach(f=>{folders[f].memoKeys=folders[f].memoKeys.filter(k=>k!==memoKey);});
+  if(folderName&&folders[folderName])folders[folderName].memoKeys.push(memoKey);
+  saveFolders();
+}
+function renderFolders(){
+  const el=document.getElementById('folderList');if(!el)return;
+  const allMemoKeys=Object.keys(memos).filter(k=>memos[k]&&memos[k].trim());
+  const assignedKeys=Object.values(folders).flatMap(f=>f.memoKeys);
+  const unassigned=allMemoKeys.filter(k=>!assignedKeys.includes(k));
+  let html='';
+  if(!Object.keys(folders).length&&!allMemoKeys.length){html='<div style="text-align:center;color:#C7C7CC;padding:60px 20px;font-size:14px;">메모가 없어요.<br>종목이나 카테고리를 길게 눌러 메모를 작성해보세요.</div>';el.innerHTML=html;return;}
+  Object.keys(folders).forEach(name=>{
+    const f=folders[name];
+    const keys=f.memoKeys.filter(k=>memos[k]);
+    html+=`<div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${keys.length?'10px':'0'};">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:22px;">📁</span>
+          <div>
+            <div style="font-size:15px;font-weight:700;color:${f.color};">${name}</div>
+            <div style="font-size:12px;color:#8E8E93;">${keys.length}개 메모</div>
+          </div>
+        </div>
+        <button onclick="deleteFolder('${name}')" style="background:none;border:none;color:#C7C7CC;font-size:18px;cursor:pointer;">🗑</button>
+      </div>`;
+    keys.forEach(k=>{const lb=getMemoLabel(k);html+=`<div onclick="openMemoByKey('${k}')" style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid #F2F2F7;cursor:pointer;"><div><div style="font-size:14px;font-weight:600;">${lb.title}</div><div style="font-size:11px;color:#8E8E93;">${lb.sub}</div></div><span style="color:#C7C7CC;">›</span></div>`;});
+    html+='</div>';
+  });
+  if(unassigned.length){
+    html+=`<div class="card" style="margin-bottom:12px;"><div style="font-size:13px;font-weight:700;color:#8E8E93;margin-bottom:8px;">📝 폴더 미지정 (${unassigned.length}개)</div>`;
+    unassigned.forEach(k=>{
+      const lb=getMemoLabel(k);
+      const folderNames=Object.keys(folders);
+      const opts=folderNames.map(f=>`<option value="${f}">${f}</option>`).join('');
+      html+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid #F2F2F7;">
+        <div onclick="openMemoByKey('${k}')" style="cursor:pointer;flex:1;"><div style="font-size:14px;font-weight:600;">${lb.title}</div><div style="font-size:11px;color:#8E8E93;">${lb.sub}</div></div>
+        ${folderNames.length?`<select onchange="assignToFolder('${k}',this.value);renderFolders()" style="font-size:12px;border:1px solid #E5E5EA;border-radius:8px;padding:4px 6px;background:#F2F2F7;"><option value="">폴더 선택</option>${opts}</select>`:''}
+      </div>`;
+    });
+    html+='</div>';
+  }
+  el.innerHTML=html;
+}
 function closeAddModal(){document.getElementById('addModal').style.display='none';document.getElementById('newName').value='';document.getElementById('newVal').value='';}
 function startLongPress(idx){longPressTriggered=false;longPressTimer=setTimeout(()=>{longPressTriggered=true;openMemo(idx);},400);}
 function startCatLongPress(cat){longPressTriggered=false;longPressTimer=setTimeout(()=>{longPressTriggered=true;openCatMemo(cat);},400);}
