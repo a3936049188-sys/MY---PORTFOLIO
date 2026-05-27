@@ -127,6 +127,10 @@
         .drum-col::-webkit-scrollbar { display: none; }
         .fmt-bar { display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #E5E5EA; }
         .fmt-btn { background:#F2F2F7;border:none;border-radius:8px;padding:7px 11px;font-size:13px;cursor:pointer;color:var(--main);min-width:34px;text-align:center;-webkit-user-select:none;user-select:none; }
+        .memo-tab { background:none;border:none;border-bottom:2px solid transparent;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;color:#8E8E93;white-space:nowrap;-webkit-user-select:none;user-select:none; }
+        .memo-tab.active { color:var(--blue);border-bottom-color:var(--blue); }
+        .memo-tab-bar { display:flex;align-items:center;overflow-x:auto;gap:0;border-bottom:1px solid #F2F2F7;margin-bottom:10px; }
+        .memo-tab-bar::-webkit-scrollbar { display:none; }
         .fmt-btn:active { background:var(--blue);color:#fff; }
         .diary-editor { min-height:140px;border:1px solid #E5E5EA;border-radius:12px;padding:12px;font-size:16px;background:#FAFAFA;outline:none;font-family:inherit;line-height:1.7;-webkit-user-select:text;user-select:text; }
         .diary-editor:empty:before { content:attr(data-placeholder);color:#C7C7CC;pointer-events:none;display:block; }
@@ -185,27 +189,31 @@
 
 <!-- 메모 페이지 -->
 <div id="view-memo" class="view">
-    <div style="display:flex;align-items:center;gap:12px;margin:20px 0 15px;">
-        <button onclick="closeMemoPage()" style="background:#F2F2F7;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">←</button>
-        <div style="font-size:20px;font-weight:800;flex:1;" id="memoPageTitle">메모</div>
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 0 6px;">
+        <button onclick="closeMemoPage()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#8E8E93;padding:4px;flex-shrink:0;">‹</button>
+        <div style="font-size:14px;font-weight:600;color:#3A3A3C;flex:1;" id="memoPageTitle">메모</div>
+        <button onclick="saveMemoPage()" style="background:var(--blue);color:#fff;border:none;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;">저장</button>
     </div>
-    <div class="card">
-        <div class="fmt-bar">
-            <button type="button" onmousedown="event.preventDefault();fmtMemo('bold')" class="fmt-btn"><b>B</b></button>
-            <button type="button" onmousedown="event.preventDefault();fmtMemo('italic')" class="fmt-btn"><i>I</i></button>
-            <button type="button" onmousedown="event.preventDefault();fmtMemo('underline')" class="fmt-btn"><u>U</u></button>
-            <button type="button" onmousedown="event.preventDefault();fmtMemo('strikeThrough')" class="fmt-btn" style="text-decoration:line-through;">S</button>
-            <button type="button" onmousedown="event.preventDefault();fmtMemoBlock('h1')" class="fmt-btn" style="font-size:12px;font-weight:800;">제목</button>
-            <button type="button" onmousedown="event.preventDefault();fmtMemoBlock('h2')" class="fmt-btn" style="font-size:11px;font-weight:700;">소제목</button>
-            <button type="button" onmousedown="event.preventDefault();fmtMemoBlock('p')" class="fmt-btn" style="font-size:11px;">본문</button>
-            <button type="button" onmousedown="event.preventDefault();fmtMemo('insertUnorderedList')" class="fmt-btn">• 목록</button>
-            <button type="button" onmousedown="event.preventDefault();fmtMemo('insertOrderedList')" class="fmt-btn">1. 목록</button>
-            <button type="button" onmousedown="event.preventDefault();fmtMemoCheck()" class="fmt-btn">☑ 체크</button>
-            <button type="button" onmousedown="event.preventDefault();fmtMemoLink()" class="fmt-btn">🔗 링크</button>
-            <label class="fmt-btn" style="cursor:pointer;">📷<input type="file" accept="image/*" style="display:none;" onchange="fmtMemoPhoto(this)"></label>
+    <div style="background:#fff;border-radius:16px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+        <div class="memo-tab-bar" id="memoTabBar"></div>
+        <div class="fmt-bar" style="gap:2px;padding-bottom:10px;">
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('bold')" class="fmt-btn" title="굵게"><b>B</b></button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('italic')" class="fmt-btn" title="기울임"><i>I</i></button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('underline')" class="fmt-btn" title="밑줄"><u>U</u></button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('strikeThrough')" class="fmt-btn" title="취소선" style="text-decoration:line-through;">S</button>
+            <div style="width:1px;background:#E5E5EA;margin:0 2px;"></div>
+            <button type="button" onmousedown="event.preventDefault();fmtMemoBlock('h1')" class="fmt-btn" title="제목" style="font-size:11px;font-weight:800;">H1</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemoBlock('h2')" class="fmt-btn" title="소제목" style="font-size:11px;font-weight:700;">H2</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemoBlock('p')" class="fmt-btn" title="본문" style="font-size:14px;">¶</button>
+            <div style="width:1px;background:#E5E5EA;margin:0 2px;"></div>
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('insertUnorderedList')" class="fmt-btn" title="글머리 목록" style="font-size:15px;">≡</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemo('insertOrderedList')" class="fmt-btn" title="번호 목록" style="font-size:11px;">1≡</button>
+            <button type="button" onmousedown="event.preventDefault();fmtMemoCheck()" class="fmt-btn" title="체크리스트">☑</button>
+            <div style="width:1px;background:#E5E5EA;margin:0 2px;"></div>
+            <button type="button" onmousedown="event.preventDefault();fmtMemoLink()" class="fmt-btn" title="링크">🔗</button>
+            <label class="fmt-btn" title="사진" style="cursor:pointer;">🖼<input type="file" accept="image/*" style="display:none;" onchange="fmtMemoPhoto(this)"></label>
         </div>
-        <div contenteditable="true" id="memoPageContent" class="diary-editor" data-placeholder="메모를 입력하세요."></div>
-        <button class="btn-primary" onclick="saveMemoPage()" style="margin-top:12px;">저장하기</button>
+        <div contenteditable="true" id="memoPageContent" class="diary-editor" style="min-height:300px;" data-placeholder="메모를 입력하세요."></div>
     </div>
 </div>
 
@@ -415,6 +423,8 @@ const TODAY=new Date(); let calY=TODAY.getFullYear(), calM=TODAY.getMonth();
 let selDate=null, editId=null, catState={}, drillCat=null;
 let memos={}; try{const s=localStorage.getItem('my_asset_memos');if(s)memos=JSON.parse(s);}catch(e){memos={};}
 let folders={}; try{const s=localStorage.getItem('my_memo_folders');if(s)folders=JSON.parse(s);}catch(e){folders={};}
+let memoTabs={}; try{const s=localStorage.getItem('my_memo_tabs');if(s)memoTabs=JSON.parse(s);}catch(e){memoTabs={};}
+let activeMemoKey='', activeMemoTab='';
 let memoIdx=-1;
 let memoCatKey='';
 let longPressTimer=null,longPressTriggered=false;
@@ -952,10 +962,119 @@ function toggleCheck(el){el.classList.toggle('done');el.querySelector('.ci').inn
 function toggleImp(id){const e=diaries.find(d=>d.id===id);if(e){e.isImportant=!e.isImportant;localStorage.setItem('my_diary_v13',JSON.stringify(diaries));saveToFirestore();renderDiary();}}
 function editDiary(id){const e=diaries.find(d=>d.id===id);if(!e)return;applyDateFilter(e.yyyy,e.mm,e.dd);}
 function delDiary(id){if(confirm('삭제할까요?')){diaries=diaries.filter(e=>e.id!==id);localStorage.setItem('my_diary_v13',JSON.stringify(diaries));saveToFirestore();renderCal();renderDiary();}}
-function openMemo(idx){memoIdx=idx;memoCatKey='';const item=assets[idx];const key=item.cat+'_'+item.name;const c=memos[key]||'';document.getElementById('memoPageTitle').innerText=item.name+' 메모';document.getElementById('memoPageContent').innerHTML=c&&c.includes('<')?c:c.replace(/\n/g,'<br>');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-memo').classList.add('active');document.getElementById('fabAdd').style.display='none';window.scrollTo({top:0,behavior:'smooth'});}
-function openCatMemo(cat){memoCatKey='__cat__'+cat;memoIdx=-1;const catLabels={주식:'📈 주식',코인:'🪙 코인',현금:'💵 현금',적금:'🏦 적금'};const c=memos[memoCatKey]||'';document.getElementById('memoPageTitle').innerText=(catLabels[cat]||cat)+' 메모';document.getElementById('memoPageContent').innerHTML=c&&c.includes('<')?c:c.replace(/\n/g,'<br>');document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-memo').classList.add('active');document.getElementById('fabAdd').style.display='none';window.scrollTo({top:0,behavior:'smooth'});}
-function saveMemoPage(){const key=memoIdx>=0?(assets[memoIdx].cat+'_'+assets[memoIdx].name):memoCatKey;if(!key)return;const el=document.getElementById('memoPageContent');const val=el.innerHTML.trim();if(el.innerText.trim())memos[key]=val;else delete memos[key];localStorage.setItem('my_asset_memos',JSON.stringify(memos));saveToFirestore();closeMemoPage();toast('메모 저장됨');}
-function closeMemoPage(){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-portfolio').classList.add('active');document.getElementById('fabAdd').style.display='flex';render();window.scrollTo({top:0,behavior:'smooth'});}
+function initMemoTabs(key, fallbackContent){
+    if(!memoTabs[key]){
+        memoTabs[key]={tabs:['기본'],content:{'기본':fallbackContent||''}};
+    }
+    activeMemoKey=key;
+    activeMemoTab=memoTabs[key].tabs[0];
+    renderMemoTabBar();
+    loadMemoTabContent();
+}
+function renderMemoTabBar(){
+    const bar=document.getElementById('memoTabBar');if(!bar)return;
+    const t=memoTabs[activeMemoKey];if(!t)return;
+    let html='';
+    t.tabs.forEach(name=>{
+        const esc=name.replace(/'/g,"\\'");
+        html+=`<div style="display:flex;align-items:center;">
+            <button class="memo-tab${name===activeMemoTab?' active':''}" onclick="switchMemoTab('${esc}')" ondblclick="renameMemoTab('${esc}')" ontouchstart="startTabLongPress('${esc}')" ontouchend="endTabLongPress()" ontouchmove="endTabLongPress()">${name}</button>
+            ${t.tabs.length>1?`<button onclick="deleteMemoTab('${esc}')" style="background:none;border:none;color:#C7C7CC;font-size:12px;cursor:pointer;padding:0 4px 0 0;">×</button>`:''}
+        </div>`;
+    });
+    html+=`<button onclick="addMemoTab()" style="background:none;border:none;color:var(--blue);font-size:20px;cursor:pointer;padding:0 8px;flex-shrink:0;">+</button>`;
+    bar.innerHTML=html;
+}
+function switchMemoTab(name){
+    saveMemoTabContent();
+    activeMemoTab=name;
+    renderMemoTabBar();
+    loadMemoTabContent();
+}
+function loadMemoTabContent(){
+    const c=memoTabs[activeMemoKey]?.content[activeMemoTab]||'';
+    const el=document.getElementById('memoPageContent');
+    el.innerHTML=c&&c.includes('<')?c:c.replace(/\n/g,'<br>');
+}
+function saveMemoTabContent(){
+    if(!activeMemoKey||!activeMemoTab)return;
+    const el=document.getElementById('memoPageContent');
+    if(!memoTabs[activeMemoKey])return;
+    const val=el.innerHTML.trim();
+    if(el.innerText.trim())memoTabs[activeMemoKey].content[activeMemoTab]=val;
+    else delete memoTabs[activeMemoKey].content[activeMemoTab];
+}
+function addMemoTab(){
+    const name=prompt('탭 이름을 입력해주세요.');
+    if(!name||!name.trim())return;
+    const n=name.trim();
+    if(memoTabs[activeMemoKey].tabs.includes(n))return toast('이미 있는 탭이에요.');
+    saveMemoTabContent();
+    memoTabs[activeMemoKey].tabs.push(n);
+    memoTabs[activeMemoKey].content[n]='';
+    activeMemoTab=n;
+    renderMemoTabBar();
+    loadMemoTabContent();
+}
+let tabLongPressTimer=null;
+function startTabLongPress(name){tabLongPressTimer=setTimeout(()=>{tabLongPressTimer=null;renameMemoTab(name);},500);}
+function endTabLongPress(){if(tabLongPressTimer){clearTimeout(tabLongPressTimer);tabLongPressTimer=null;}}
+function renameMemoTab(name){
+    const newName=prompt('새 탭 이름을 입력해주세요.',name);
+    if(!newName||!newName.trim()||newName.trim()===name)return;
+    const n=newName.trim();
+    const t=memoTabs[activeMemoKey];
+    if(t.tabs.includes(n))return toast('이미 있는 탭 이름이에요.');
+    const idx=t.tabs.indexOf(name);
+    if(idx<0)return;
+    t.tabs[idx]=n;
+    t.content[n]=t.content[name]||'';
+    delete t.content[name];
+    if(activeMemoTab===name)activeMemoTab=n;
+    renderMemoTabBar();
+}
+function deleteMemoTab(name){
+    const t=memoTabs[activeMemoKey];
+    if(t.tabs.length<=1)return toast('탭이 1개일 때는 삭제할 수 없어요.');
+    if(!confirm(`"${name}" 탭을 삭제할까요?`))return;
+    t.tabs=t.tabs.filter(n=>n!==name);
+    delete t.content[name];
+    if(activeMemoTab===name)activeMemoTab=t.tabs[0];
+    renderMemoTabBar();
+    loadMemoTabContent();
+}
+function openMemo(idx){
+    memoIdx=idx;memoCatKey='';
+    const item=assets[idx];const key=item.cat+'_'+item.name;
+    const legacy=memos[key]||'';
+    document.getElementById('memoPageTitle').innerText=item.name;
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-memo').classList.add('active');
+    document.getElementById('fabAdd').style.display='none';
+    document.querySelector('.header').style.display='none';
+    initMemoTabs(key, legacy);
+    window.scrollTo({top:0,behavior:'smooth'});
+}
+function openCatMemo(cat){
+    memoCatKey='__cat__'+cat;memoIdx=-1;
+    const catLabels={주식:'📈 주식',코인:'🪙 코인',현금:'💵 현금',적금:'🏦 적금'};
+    const legacy=memos[memoCatKey]||'';
+    document.getElementById('memoPageTitle').innerText=catLabels[cat]||cat;
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-memo').classList.add('active');
+    document.getElementById('fabAdd').style.display='none';
+    document.querySelector('.header').style.display='none';
+    initMemoTabs(memoCatKey, legacy);
+    window.scrollTo({top:0,behavior:'smooth'});
+}
+function saveMemoPage(){
+    saveMemoTabContent();
+    localStorage.setItem('my_memo_tabs',JSON.stringify(memoTabs));
+    saveToFirestore();
+    closeMemoPage();
+    toast('메모 저장됨');
+}
+function closeMemoPage(){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById('view-portfolio').classList.add('active');document.getElementById('fabAdd').style.display='flex';document.querySelector('.header').style.display='flex';render();window.scrollTo({top:0,behavior:'smooth'});}
 function openAddModal(){adjustPlaceholder();document.getElementById('addModal').style.display='flex';}
 
 // ===== FAB =====
@@ -1097,7 +1216,7 @@ async function saveToFirestore(){
     const ts = Date.now();
     localStorage.setItem('my_last_modified', ts);
     await db.collection('users').doc(currentUser.uid).set({
-      assets, diaries, memos, goal: GOAL, ratios, history, lastModified: ts
+      assets, diaries, memos, memoTabs, goal: GOAL, ratios, history, lastModified: ts
     });
   } catch(e) { console.error('Firestore 저장 실패', e); }
 }
@@ -1116,6 +1235,7 @@ async function loadFromFirestore(){
         if(Array.isArray(d.assets)){ assets=d.assets; localStorage.setItem('my_assets_v10',JSON.stringify(assets)); }
         if(Array.isArray(d.diaries)){ diaries=d.diaries; localStorage.setItem('my_diary_v13',JSON.stringify(diaries)); }
         if(d.memos){ memos=d.memos; localStorage.setItem('my_asset_memos',JSON.stringify(memos)); }
+        if(d.memoTabs){ memoTabs=d.memoTabs; localStorage.setItem('my_memo_tabs',JSON.stringify(memoTabs)); }
         if(d.goal){ GOAL=d.goal; localStorage.setItem('my_goal_v10',GOAL); }
         if(Array.isArray(d.ratios)&&d.ratios.length){ ratios=d.ratios; localStorage.setItem('my_invest_ratios',JSON.stringify(ratios)); }
         if(Array.isArray(d.history)){ history=d.history; localStorage.setItem('my_asset_history',JSON.stringify(history)); }
