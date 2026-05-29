@@ -359,13 +359,15 @@
         <option value="현금">💵 현금</option>
         <option value="적금">🏦 적금</option>
     </select>
+    <div id="cashTypeRow" style="display:none;gap:8px;margin-bottom:4px;" class="input-row">
+        <button type="button" id="cashBtn_KRW" onclick="setCashType('KRW')" style="flex:1;height:44px;border-radius:12px;border:2px solid var(--blue);background:var(--blue);color:#fff;font-size:14px;font-weight:700;cursor:pointer;">🇰🇷 원화</button>
+        <button type="button" id="cashBtn_USD" onclick="setCashType('USD')" style="flex:1;height:44px;border-radius:12px;border:2px solid #E5E5EA;background:#F2F2F7;color:#3A3A3C;font-size:14px;font-weight:600;cursor:pointer;">🇺🇸 달러</button>
+        <button type="button" id="cashBtn_ETC" onclick="setCashType('ETC')" style="flex:1;height:44px;border-radius:12px;border:2px solid #E5E5EA;background:#F2F2F7;color:#3A3A3C;font-size:14px;font-weight:600;cursor:pointer;">기타</button>
+    </div>
     <div class="input-row">
         <input type="text" id="newName" placeholder="명칭 (예: 카카오뱅크)">
+        <input type="text" id="cashOtherName" placeholder="이름 입력 (예: 엔화)" style="display:none;flex:1;font-size:15px;height:48px;border-radius:12px;border:1px solid #D1D1D6;background:#FAFAFA;padding:0 14px;">
         <input type="tel" inputmode="decimal" id="newVal" placeholder="금액 입력" oninput="fmtNum(this)">
-        <select id="cashCurrencySel" style="display:none;flex:1;font-size:15px;height:48px;border-radius:12px;border:1px solid #D1D1D6;background:#FAFAFA;padding:0 12px;">
-            <option value="KRW">🇰🇷 원화 (KRW)</option>
-            <option value="USD">🇺🇸 달러 (USD)</option>
-        </select>
     </div>
     <button class="btn-primary" onclick="addAsset()">추가하기</button>
     <button onclick="closeAddModal()" style="border:none;color:var(--sub);background:none;padding:10px;cursor:pointer;width:100%;">취소</button>
@@ -797,21 +799,42 @@ function adjustPlaceholder(){
     const isCash=(cat==='현금');
     document.getElementById('newName').placeholder=isM?'Ticker (예: VOO)':'명칭 (예: 카카오뱅크)';
     document.getElementById('newName').style.display=isCash?'none':'block';
+    document.getElementById('cashOtherName').style.display='none';
     document.getElementById('newVal').placeholder=isM?'수량':'금액';
-    document.getElementById('cashCurrencySel').style.display=isCash?'block':'none';
+    document.getElementById('cashTypeRow').style.display=isCash?'flex':'none';
+    if(isCash) setCashType('KRW');
+}
+let cashType='KRW';
+function setCashType(type){
+    cashType=type;
+    ['KRW','USD','ETC'].forEach(t=>{
+        const btn=document.getElementById('cashBtn_'+t);
+        const active=t===type;
+        btn.style.background=active?'var(--blue)':'#F2F2F7';
+        btn.style.color=active?'#fff':'#3A3A3C';
+        btn.style.borderColor=active?'var(--blue)':'#E5E5EA';
+    });
+    document.getElementById('cashOtherName').style.display=type==='ETC'?'block':'none';
 }
 function addAsset(){
     const cat=document.getElementById('assetCat').value;
     const isM=(cat==='주식'||cat==='코인');
     const isCash=(cat==='현금');
-    const currency=isCash?document.getElementById('cashCurrencySel').value:'KRW';
-    const name=isCash?currency:document.getElementById('newName').value.trim().toUpperCase();
+    let name, currency='KRW';
+    if(isCash){
+        if(cashType==='KRW'){name='원화';}
+        else if(cashType==='USD'){name='달러';currency='USD';}
+        else{name=document.getElementById('cashOtherName').value.trim();if(!name)return toast('이름을 입력해주세요.');}
+    } else {
+        name=document.getElementById('newName').value.trim().toUpperCase();
+    }
     const val=raw(document.getElementById('newVal').value);
     if(!name||!document.getElementById('newVal').value)return toast('입력 오류!');
     assets.push({cat,name,qty:isM?val:0,amount:isM?0:val,currency});
     saveAssets();
     document.getElementById('newName').value='';
     document.getElementById('newVal').value='';
+    document.getElementById('cashOtherName').value='';
     closeAddModal();
     toast('담겼습니다!');
 }
