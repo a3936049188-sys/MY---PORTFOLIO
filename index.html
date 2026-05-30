@@ -125,14 +125,15 @@
         .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #E5E5EA; border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .drum-col::-webkit-scrollbar { display: none; }
-        .fmt-bar { display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #E5E5EA; }
-        .fmt-btn { background:#F2F2F7;border:none;border-radius:8px;padding:7px 11px;font-size:13px;cursor:pointer;color:var(--main);min-width:34px;text-align:center;-webkit-user-select:none;user-select:none; }
+        .fmt-bar { display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #E5E5EA; }
+        .fmt-bar::-webkit-scrollbar { display:none; }
+        .fmt-btn { background:#F2F2F7;border:none;border-radius:8px;padding:5px 9px;font-size:12px;cursor:pointer;color:var(--main);min-width:28px;text-align:center;-webkit-user-select:none;user-select:none;white-space:nowrap;flex-shrink:0; }
         .memo-tab { background:none;border:none;border-bottom:2px solid transparent;padding:6px 12px;font-size:13px;font-weight:600;cursor:pointer;color:#8E8E93;white-space:nowrap;-webkit-user-select:none;user-select:none; }
         .memo-tab.active { color:var(--blue);border-bottom-color:var(--blue); }
         .memo-tab-bar { display:flex;align-items:center;overflow-x:auto;gap:0;border-bottom:1px solid #F2F2F7;margin-bottom:10px; }
         .memo-tab-bar::-webkit-scrollbar { display:none; }
         .fmt-btn:active { background:var(--blue);color:#fff; }
-        .diary-editor { min-height:140px;border:1px solid #E5E5EA;border-radius:12px;padding:12px;font-size:16px;background:#FAFAFA;outline:none;font-family:inherit;line-height:1.7;-webkit-user-select:text;user-select:text; }
+        .diary-editor { min-height:calc(100dvh - 360px);border:1px solid #E5E5EA;border-radius:12px;padding:12px;font-size:16px;background:#FAFAFA;outline:none;font-family:inherit;line-height:1.7;-webkit-user-select:text;user-select:text; }
         .diary-editor:empty:before { content:attr(data-placeholder);color:#C7C7CC;pointer-events:none;display:block; }
         .diary-editor b,.diary-editor strong { font-weight:700; }
         .diary-editor ul { padding-left:22px;margin:4px 0; }
@@ -233,22 +234,21 @@
 
 <!-- 일기 쓰기 페이지 -->
 <div id="view-diary-write" class="view">
-    <div style="display:flex;align-items:center;gap:12px;margin:20px 0 15px;">
+    <div style="display:flex;align-items:center;gap:10px;margin:20px 0 15px;">
         <button onclick="closeDiaryWrite()" style="background:#F2F2F7;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">←</button>
-        <div style="flex:1;">
-            <div style="font-size:20px;font-weight:800;" id="diaryWriteDate">오늘의 기록</div>
-            <div style="font-size:12px;color:var(--sub);" id="diaryWriteSub">시장 기록을 남겨보세요</div>
+        <div style="flex:1;display:flex;align-items:center;gap:8px;min-width:0;">
+            <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="diaryWriteDate">오늘의 기록</div>
+            <button id="moodHeaderBtn" onclick="cycleMood()" style="background:#F2F2F7;border:none;border-radius:20px;padding:4px 10px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap;">😊 강세</button>
         </div>
-        <button id="importantStar" onclick="toggleImportantStar()" style="background:none;border:none;font-size:30px;cursor:pointer;flex-shrink:0;line-height:1;">☆</button>
+        <button id="importantStar" onclick="toggleImportantStar()" style="background:none;border:none;font-size:28px;cursor:pointer;flex-shrink:0;line-height:1;">☆</button>
     </div>
     <div class="card">
-        <div class="seg" style="background:#F2F2F7;">
-            <button class="seg-btn active" id="mood-bull" onclick="setMood('bull',this)">😊 강세장</button>
-            <button class="seg-btn" id="mood-bear" onclick="setMood('bear',this)">😢 약세장</button>
-            <button class="seg-btn" id="mood-neutral" onclick="setMood('neutral',this)">🤔 관망</button>
-        </div>
         <div class="input-col">
-            <div id="diaryPortfolioSnap" style="background:#FAFAFA;padding:12px;border-radius:12px;border:1px solid #E5E5EA;max-height:220px;overflow-y:auto;"></div>
+            <div onclick="toggleDiarySnap()" style="display:flex;align-items:center;justify-content:space-between;background:#FAFAFA;padding:10px 12px;border-radius:12px;border:1px solid #E5E5EA;cursor:pointer;">
+                <span style="font-size:12px;font-weight:700;color:#8E8E93;">📊 포트폴리오 스냅샷</span>
+                <span id="snapToggleIcon" style="font-size:11px;color:#AAAAAA;">▼</span>
+            </div>
+            <div id="diaryPortfolioSnap" style="background:#FAFAFA;padding:12px;border-radius:12px;border:1px solid #E5E5EA;max-height:220px;overflow-y:auto;display:none;margin-top:4px;"></div>
             <input type="hidden" id="diaryEvent" value="">
             <div class="fmt-bar">
                 <button type="button" onmousedown="event.preventDefault();fmtDiary('bold')" class="fmt-btn"><b>B</b></button>
@@ -857,7 +857,13 @@ function closeGoalModal(){document.getElementById('goalModal').style.display='no
 function saveGoal(){const v=raw(document.getElementById('goalInput').value);if(v>0){GOAL=v;localStorage.setItem('my_goal_v10',GOAL);saveToFirestore();render();closeGoalModal();}}
 
 // ===== 일기 =====
-function setMood(m,btn){mood=m;document.querySelectorAll('#view-diary-write .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+function toggleDiarySnap(){const el=document.getElementById('diaryPortfolioSnap');const icon=document.getElementById('snapToggleIcon');const open=el.style.display!=='none';el.style.display=open?'none':'block';icon.innerText=open?'▼':'▲';}
+const MOOD_CYCLE=['bull','bear','neutral'];
+const MOOD_LABEL={bull:'😊 강세',bear:'😢 약세',neutral:'🤔 관망'};
+const MOOD_BG={bull:'#FFF0F0',bear:'#F0F5FF',neutral:'#F5F5F5'};
+function updateMoodHeaderBtn(){const btn=document.getElementById('moodHeaderBtn');if(btn){btn.innerText=MOOD_LABEL[mood];btn.style.background=MOOD_BG[mood];}}
+function cycleMood(){const idx=MOOD_CYCLE.indexOf(mood);mood=MOOD_CYCLE[(idx+1)%3];updateMoodHeaderBtn();}
+function setMood(m){mood=m;updateMoodHeaderBtn();}
 function toggleImportantStar(){const cb=document.getElementById('diaryImportant');cb.checked=!cb.checked;const s=document.getElementById('importantStar');s.innerText=cb.checked?'⭐':'☆';}
 function addEvt(t){const el=document.getElementById('diaryEvent');el.value=el.value?el.value+', '+t:t;}
 function updateDiaryLabel(){const lbl=document.getElementById('diaryDateLabel'),btn=document.getElementById('diaryBtn');if(!lbl||!btn)return;if(selDate){const{y,m,d}=selDate;lbl.innerText=`${y}.${String(m).padStart(2,'0')}.${String(d).padStart(2,'0')}`;const ex=diaries.find(e=>e.yyyy===y&&e.mm===m&&e.dd===d);if(ex){editId=ex.id;document.getElementById('diaryContent').value=ex.content;document.getElementById('diaryEvent').value=ex.eventText||'';mood=ex.mood;document.getElementById('diaryImportant').checked=ex.isImportant;document.querySelectorAll('#view-diary .seg-btn').forEach(b=>b.classList.remove('active'));document.getElementById('mood-'+mood).classList.add('active');btn.innerText='수정 & 백업';}else{editId=null;document.getElementById('diaryContent').value='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;btn.innerText='저장 & 백업';}}else{lbl.innerText='오늘';btn.innerText='저장 & 백업';}}
@@ -869,13 +875,13 @@ function applyDateFilter(y,m,d){
     const ex=diaries.find(e=>e.yyyy===y&&e.mm===m&&e.dd===d);
     if(ex){document.getElementById('diaryContent').innerHTML=ex.content&&ex.content.includes('<')?ex.content:ex.content.replace(/\n/g,'<br>');document.getElementById('diaryEvent').value=ex.eventText||'';mood=ex.mood;document.getElementById('diaryImportant').checked=ex.isImportant;editId=ex.id;}
     else{document.getElementById('diaryContent').innerHTML='';document.getElementById('diaryEvent').value='';document.getElementById('diaryImportant').checked=false;mood='bull';}
-    document.querySelectorAll('#view-diary-write .seg-btn').forEach(b=>b.classList.remove('active'));
-    document.getElementById('mood-'+mood).classList.add('active');
+    updateMoodHeaderBtn();
     const imp=ex?ex.isImportant:false;document.getElementById('diaryImportant').checked=imp;document.getElementById('importantStar').innerText=imp?'⭐':'☆';
     const ds=`${y}년 ${String(m).padStart(2,'0')}월 ${String(d).padStart(2,'0')}일`;
     document.getElementById('diaryWriteDate').innerText=ds;
-    document.getElementById('diaryWriteSub').innerText=ex?'기록을 수정합니다':'시장 기록을 남겨보세요';
     document.getElementById('diaryBtn').innerText=ex?'수정하기':'저장하기';
+    document.querySelector('.header').style.display='none';
+    const snapEl=document.getElementById('diaryPortfolioSnap');const snapIcon=document.getElementById('snapToggleIcon');if(snapEl){snapEl.style.display='none';}if(snapIcon){snapIcon.innerText='▼';}
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.getElementById('view-diary-write').classList.add('active');
     document.body.classList.add('diary-bg');
@@ -918,6 +924,7 @@ function renderDiaryPortfolio(snap, dateStr){
     }
 }
 function closeDiaryWrite(){
+    document.querySelector('.header').style.display='';
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.getElementById('view-diary').classList.add('active');
     document.body.classList.add('diary-bg');
@@ -930,12 +937,12 @@ function showCalPicker(){
     modal.id='calPickerModal';
     modal.style.cssText='position:fixed;inset:0;z-index:20000;display:flex;flex-direction:column;justify-content:flex-end;background:rgba(0,0,0,0.4);';
     const sheet=document.createElement('div');
-    sheet.style.cssText='background:#fff;border-radius:24px 24px 0 0;';
-    sheet.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid #F2F2F7;"><button onclick="closeCalPicker()" style="background:none;border:none;font-size:16px;color:var(--sub);cursor:pointer;padding:0;">취소</button><div style="font-weight:700;font-size:17px;">날짜 이동</div><button onclick="confirmCalPicker()" style="background:none;border:none;font-size:16px;color:var(--blue);font-weight:700;cursor:pointer;padding:0;">확인</button></div>'
+    sheet.style.cssText='background:rgba(255,255,255,0.75);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);border-radius:24px 24px 0 0;';
+    sheet.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid rgba(242,242,247,0.8);"><button onclick="closeCalPicker()" style="background:none;border:none;font-size:16px;color:var(--sub);cursor:pointer;padding:0;">취소</button><div style="font-weight:700;font-size:17px;">날짜 이동</div><button onclick="confirmCalPicker()" style="background:none;border:none;font-size:16px;color:var(--blue);font-weight:700;cursor:pointer;padding:0;">확인</button></div>'
     +'<div style="position:relative;padding:8px 24px 36px;">'
-    +'<div style="position:absolute;left:24px;right:24px;top:8px;height:88px;background:linear-gradient(to bottom,#fff,transparent);pointer-events:none;z-index:2;"></div>'
-    +'<div style="position:absolute;left:24px;right:24px;bottom:36px;height:88px;background:linear-gradient(to top,#fff,transparent);pointer-events:none;z-index:2;"></div>'
-    +'<div style="position:absolute;left:24px;right:24px;top:50%;height:44px;transform:translateY(-50%);background:#F2F2F7;border-radius:10px;pointer-events:none;z-index:1;"></div>'
+    +'<div style="position:absolute;left:24px;right:24px;top:8px;height:88px;background:linear-gradient(to bottom,rgba(255,255,255,0.7),transparent);pointer-events:none;z-index:2;"></div>'
+    +'<div style="position:absolute;left:24px;right:24px;bottom:36px;height:88px;background:linear-gradient(to top,rgba(255,255,255,0.7),transparent);pointer-events:none;z-index:2;"></div>'
+    +'<div style="position:absolute;left:24px;right:24px;top:50%;height:44px;transform:translateY(-50%);background:rgba(242,242,247,0.7);border-radius:10px;pointer-events:none;z-index:1;"></div>'
     +'<div style="display:flex;">'
     +'<div id="drumYear" class="drum-col" style="flex:1;height:220px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;"></div>'
     +'<div id="drumMonth" class="drum-col" style="flex:1;height:220px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;"></div>'
