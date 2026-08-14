@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="./rebalance.js"></script>
     <style>
         :root {
             --bg: #F2F2F7; --card: #FFFFFF; --main: #000000; --sub: #8E8E93;
@@ -129,6 +130,76 @@
         .check-item { display:flex;align-items:flex-start;gap:6px;padding:2px 0;cursor:pointer;-webkit-user-select:none;user-select:none; }
         .check-item .ci { font-size:16px;flex-shrink:0; }
         .check-item.done { opacity:0.45;text-decoration:line-through; }
+        .sentiment-hero { display:flex;align-items:center;gap:16px; }
+        .sentiment-gauge { width:128px;height:128px;border-radius:50%;background:conic-gradient(var(--blue) 0deg,#E5E5EA 0deg);display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+        .sentiment-gauge-inner { width:92px;height:92px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px #F2F2F7; }
+        .sentiment-score { font-size:30px;font-weight:900;line-height:1; }
+        .sentiment-score-label { font-size:10px;color:var(--sub);font-weight:700;margin-top:4px; }
+        .sentiment-regime { display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;color:#fff;margin-bottom:8px; }
+        .sentiment-meta { font-size:12px;color:var(--sub);line-height:1.5; }
+        .sentiment-input-row { display:flex;gap:8px;align-items:center;margin-top:14px; }
+        .sentiment-input-row input { min-width:0; }
+        .sentiment-small-btn { width:92px;height:48px;border:none;border-radius:12px;background:var(--main);color:#fff;font-size:14px;font-weight:800;cursor:pointer;flex-shrink:0; }
+        .sentiment-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px; }
+        .sentiment-metric { background:#FAFAFA;border:1px solid #E5E5EA;border-radius:12px;padding:12px;min-width:0; }
+        .sentiment-metric-label { font-size:11px;color:var(--sub);font-weight:700;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+        .sentiment-metric-value { font-size:18px;font-weight:900; }
+        .sentiment-chart { height:260px;position:relative; }
+        .sentiment-table { width:100%;border-collapse:collapse;font-size:12px; }
+        .sentiment-table th { color:var(--sub);font-weight:800;text-align:right;padding:8px 4px;border-bottom:1px solid #E5E5EA; }
+        .sentiment-table th:first-child,.sentiment-table td:first-child { text-align:left; }
+        .sentiment-table td { padding:8px 4px;text-align:right;border-bottom:1px solid #F2F2F7; }
+        .sentiment-note { font-size:12px;color:var(--sub);line-height:1.55; }
+        .rebalance-summary { background:linear-gradient(145deg,#FFFFFF 0%,#F0F6FF 100%);border:1px solid #D8E8FF; }
+        .rebalance-title-row { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px; }
+        .rebalance-title { font-size:17px;font-weight:850; }
+        .rebalance-score { min-width:58px;height:58px;border-radius:18px;background:var(--main);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1; }
+        .rebalance-score strong { font-size:21px; }
+        .rebalance-score span { font-size:9px;margin-top:4px;opacity:.72; }
+        .rebalance-mini-row { display:grid;grid-template-columns:72px 1fr auto;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:12px; }
+        .rebalance-mini-row:last-child { border-bottom:none; }
+        .rebalance-bar { height:7px;background:#E5E5EA;border-radius:99px;overflow:hidden;position:relative; }
+        .rebalance-bar > span { display:block;height:100%;border-radius:99px; }
+        .rebalance-detail-btn { width:100%;height:44px;margin-top:12px;border:none;border-radius:12px;background:var(--main);color:#fff;font-size:14px;font-weight:800;cursor:pointer; }
+        .rebalance-back { width:40px;height:40px;border:none;border-radius:50%;background:#E5E5EA;font-size:18px;cursor:pointer;flex-shrink:0; }
+        .rebalance-hero { background:linear-gradient(145deg,#111827,#1E3A5F);color:#fff; }
+        .rebalance-hero-top { display:flex;justify-content:space-between;align-items:flex-start;gap:12px; }
+        .rebalance-hero-score { font-size:42px;font-weight:900;line-height:1; }
+        .rebalance-hero-label { font-size:12px;color:rgba(255,255,255,.65);margin-top:5px; }
+        .rebalance-pill { display:inline-flex;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.14);font-size:11px;font-weight:800; }
+        .rebalance-section-title { font-size:15px;font-weight:850;margin-bottom:12px; }
+        .rebalance-target-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:8px; }
+        .rebalance-field label { display:block;font-size:11px;color:var(--sub);font-weight:700;margin-bottom:5px; }
+        .rebalance-field input,.rebalance-field select { height:44px;padding:9px;font-size:14px; }
+        .rebalance-total { margin-top:10px;padding:9px 11px;border-radius:10px;background:#F2F2F7;font-size:12px;font-weight:700;display:flex;justify-content:space-between; }
+        .rebalance-setting-grid { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+        .rebalance-analysis-row { padding:13px 0;border-bottom:1px solid #F2F2F7; }
+        .rebalance-analysis-row:last-child { border-bottom:none; }
+        .rebalance-analysis-head { display:flex;justify-content:space-between;align-items:center;margin-bottom:7px; }
+        .rebalance-analysis-name { font-size:14px;font-weight:800; }
+        .rebalance-status { font-size:10px;font-weight:800;padding:4px 7px;border-radius:7px; }
+        .rebalance-analysis-meta { display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:11px;color:var(--sub); }
+        .rebalance-analysis-meta strong { display:block;color:var(--main);font-size:13px;margin-top:2px; }
+        .rebalance-flow { display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 12px;background:#F7F8FA;border-radius:12px;margin-bottom:8px;font-size:13px;font-weight:750; }
+        .rebalance-flow-arrow { color:var(--blue);font-size:17px; }
+        .rebalance-split-row { display:grid;grid-template-columns:38px 1fr 74px 70px;align-items:center;gap:7px;padding:8px 0;border-bottom:1px solid #F2F2F7;font-size:11px; }
+        .rebalance-split-row input { height:38px;min-width:0;padding:7px;font-size:12px;text-align:center; }
+        .rebalance-ready { color:var(--green);font-weight:800; }
+        .rebalance-wait { color:var(--orange);font-weight:800; }
+        .rebalance-note { padding:11px 12px;border-radius:11px;background:#FFF8E7;border:1px solid #FFE2A8;font-size:12px;line-height:1.55;margin-top:8px; }
+        .rebalance-actions { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+        .rebalance-secondary { height:46px;border:none;border-radius:12px;background:#E5E5EA;font-weight:750;cursor:pointer; }
+        .rebalance-history-row { font-size:12px;padding:10px 0;border-bottom:1px solid #F2F2F7;display:flex;justify-content:space-between;gap:10px; }
+        .rebalance-empty { text-align:center;color:var(--sub);font-size:13px;padding:22px 8px;line-height:1.6; }
+        @media (max-width:430px) {
+            .sentiment-hero { align-items:flex-start; }
+            .sentiment-gauge { width:112px;height:112px; }
+            .sentiment-gauge-inner { width:80px;height:80px; }
+            .sentiment-score { font-size:26px; }
+            .sentiment-grid { grid-template-columns:1fr; }
+            .rebalance-target-grid { grid-template-columns:repeat(3,1fr); }
+            .rebalance-analysis-meta { grid-template-columns:repeat(3,1fr); }
+        }
     </style>
 </head>
 <body>
@@ -164,6 +235,70 @@
         </div>
     </div>
     <div id="assetList" class="card" style="padding-bottom:5px;"></div>
+    <div id="rebalanceSummary" class="card rebalance-summary"></div>
+</div>
+
+<!-- 리밸런싱 상세 -->
+<div id="view-rebalance" class="view">
+    <div style="display:flex;align-items:center;gap:12px;margin:4px 0 14px;">
+        <button class="rebalance-back" onclick="closeRebalance()" aria-label="자산 화면으로 돌아가기">←</button>
+        <div><div style="font-size:20px;font-weight:900;">리밸런싱</div><div style="font-size:11px;color:var(--sub);margin-top:2px;">목표 비중과 시장 상황을 함께 점검합니다</div></div>
+    </div>
+    <div id="rebalanceHero" class="card rebalance-hero"></div>
+    <div class="card">
+        <div class="rebalance-section-title">목표 비중</div>
+        <div class="rebalance-target-grid">
+            <div class="rebalance-field"><label for="rebalanceTargetStock">주식</label><input id="rebalanceTargetStock" type="number" min="0" max="100" step="0.1" inputmode="decimal" oninput="previewRebalance()"></div>
+            <div class="rebalance-field"><label for="rebalanceTargetCrypto">코인</label><input id="rebalanceTargetCrypto" type="number" min="0" max="100" step="0.1" inputmode="decimal" oninput="previewRebalance()"></div>
+            <div class="rebalance-field"><label for="rebalanceTargetCash">현금</label><input id="rebalanceTargetCash" type="number" min="0" max="100" step="0.1" inputmode="decimal" oninput="previewRebalance()"></div>
+        </div>
+        <div class="rebalance-total"><span>합계</span><span id="rebalanceTargetTotal">100%</span></div>
+        <button class="btn-primary" style="margin-top:10px;height:44px;" onclick="saveRebalanceSettings()">목표와 설정 저장</button>
+        <button class="rebalance-secondary" style="width:100%;margin-top:8px;" onclick="resetRebalanceTargets()">기본값 70 · 10 · 20으로 복원</button>
+    </div>
+    <div class="card">
+        <div class="rebalance-section-title">이번 계산 설정</div>
+        <div class="rebalance-setting-grid">
+            <div class="rebalance-field"><label for="rebalanceExtraCash">추가 투자금</label><input id="rebalanceExtraCash" type="tel" inputmode="numeric" placeholder="0원" oninput="fmtNum(this);previewRebalance()"></div>
+            <div class="rebalance-field"><label for="rebalanceMaxRate">최대 실행률</label><input id="rebalanceMaxRate" type="number" min="1" max="100" step="1" inputmode="numeric" oninput="previewRebalance()"></div>
+        </div>
+        <div class="rebalance-note">추가 투자금은 먼저 현금으로 반영합니다. 주식·코인 매수는 목표 현금 비중을 남긴 범위에서만 계산합니다.</div>
+    </div>
+    <div class="card">
+        <div class="rebalance-section-title">분할 설정</div>
+        <div class="rebalance-setting-grid">
+            <div class="rebalance-field"><label for="rebalanceSplitCount">분할 횟수</label><input id="rebalanceSplitCount" type="number" min="1" max="10" step="1" inputmode="numeric" onchange="changeRebalanceSplitCount()"></div>
+            <div class="rebalance-field"><label for="rebalanceSplitMode">금액 배분</label><select id="rebalanceSplitMode" onchange="changeRebalanceSplitMode()"><option value="custom">직접 설정</option><option value="equal">균등 분할</option></select></div>
+        </div>
+        <div class="rebalance-split-row" style="font-weight:800;color:var(--sub);margin-top:10px;"><span>회차</span><span>금액 비중</span><span>매수 ≤</span><span>매도 ≥</span></div>
+        <div id="rebalanceSplitSettings"></div>
+        <div class="rebalance-total"><span>분할 합계</span><span id="rebalanceSplitTotal">100%</span></div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12px;font-weight:700;"><input id="rebalanceSentimentEnabled" type="checkbox" style="width:18px;height:18px;min-width:18px;" onchange="previewRebalance()">주식 분할에 시장 심리 조건 사용</label>
+    </div>
+    <div class="card">
+        <div class="rebalance-section-title">비중 분석</div>
+        <div id="rebalanceAnalysis"></div>
+    </div>
+    <div class="card">
+        <div class="rebalance-section-title">현금 중심 이동안</div>
+        <div id="rebalancePlan"></div>
+    </div>
+    <div class="card">
+        <div class="rebalance-section-title">분할 실행안</div>
+        <div id="rebalanceTranches"></div>
+    </div>
+    <div class="card">
+        <div class="rebalance-actions">
+            <button class="btn-primary" style="height:46px;" onclick="recordRebalance('planned')">계획 저장</button>
+            <button class="rebalance-secondary" onclick="recordRebalance('held')">이번에는 보류</button>
+            <button class="rebalance-secondary" style="grid-column:1 / -1;" onclick="recordRebalance('completed')">실행 완료로 기록</button>
+        </div>
+        <div class="sentiment-note" style="margin-top:10px;">앱은 주문을 실행하지 않습니다. 실제 거래 후 자산 가격과 수량을 갱신하면 다음 회차가 다시 계산됩니다.</div>
+    </div>
+    <div class="card">
+        <div class="rebalance-section-title">최근 기록</div>
+        <div id="rebalanceHistory"></div>
+    </div>
 </div>
 
 <!-- 폴더 페이지 -->
@@ -279,13 +414,72 @@
 </div>
 
 <!-- 설정 탭 -->
+<div id="view-market" class="view">
+    <div class="card">
+        <div class="sentiment-hero">
+            <div class="sentiment-gauge" id="sentimentGauge">
+                <div class="sentiment-gauge-inner">
+                    <div class="sentiment-score" id="sentimentScore">--</div>
+                    <div class="sentiment-score-label">SCORE</div>
+                </div>
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div class="sentiment-regime" id="sentimentRegime" style="background:#8E8E93;">Loading</div>
+                <div style="font-size:20px;font-weight:900;margin-bottom:6px;">Market Sentiment</div>
+                <div class="sentiment-meta" id="sentimentMeta">S&P500, VIX, Fear & Greed로 시장 심리를 계산합니다.</div>
+                <div class="sentiment-input-row">
+                    <input type="number" min="0" max="100" id="fearGreedInput" value="52" placeholder="Fear & Greed 0-100">
+                    <button class="sentiment-small-btn" onclick="loadMarketSentiment(true)">갱신</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div style="font-size:15px;font-weight:800;margin-bottom:12px;">Score Components</div>
+        <div class="sentiment-grid">
+            <div class="sentiment-metric">
+                <div class="sentiment-metric-label">Fear & Greed</div>
+                <div class="sentiment-metric-value" id="fgMetric">--</div>
+            </div>
+            <div class="sentiment-metric">
+                <div class="sentiment-metric-label">VIX Score</div>
+                <div class="sentiment-metric-value" id="vixMetric">--</div>
+            </div>
+            <div class="sentiment-metric">
+                <div class="sentiment-metric-label">S&P Trend</div>
+                <div class="sentiment-metric-value" id="trendMetric">--</div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;">
+            <div style="font-size:15px;font-weight:800;">Sentiment Trend</div>
+            <div style="font-size:11px;color:var(--sub);font-weight:700;">최근 252거래일</div>
+        </div>
+        <div class="sentiment-chart"><canvas id="sentimentChart"></canvas></div>
+    </div>
+    <div class="card">
+        <div style="font-size:15px;font-weight:800;margin-bottom:10px;">Extreme Sentiment Backtest</div>
+        <div style="overflow-x:auto;">
+            <table class="sentiment-table">
+                <thead><tr><th>Group</th><th>Horizon</th><th>Obs</th><th>Avg</th><th>Win</th></tr></thead>
+                <tbody id="sentimentBacktestBody">
+                    <tr><td colspan="5" style="text-align:center;color:var(--sub);">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="sentiment-note" style="margin-top:10px;">Fear & Greed 과거값은 현재 입력값으로 고정됩니다. 과거 Fear & Greed 데이터가 연결되면 극단 심리 백테스트가 더 정교해집니다.</div>
+    </div>
+</div>
+
 <div id="view-sync" class="view">
     <div class="card">
         <div style="font-size:16px;font-weight:700;margin-bottom:12px;">📊 구글 시트 연동</div>
         <div style="font-size:13px;color:var(--sub);margin-bottom:10px;">주가·환율·재무 데이터를 한 번에 동기화합니다.</div>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:10px;">앱은 <b>start-portfolio.cmd</b>로 실행해야 동기화됩니다.</div>
         <div class="sync-row" style="margin-bottom:15px;">
-            <input type="text" id="csvUrl" placeholder="Apps Script 웹 앱 URL">
-            <button class="sync-btn" onclick="syncData()">동기화</button>
+            <input type="text" id="csvUrl" placeholder="기본 시트 연결됨 · 변경할 때만 URL 입력">
+            <button class="sync-btn" id="sheetSyncButton" onclick="syncData()">동기화</button>
         </div>
         <!-- Apps Script 설치 안내 -->
         <div style="background:#F0F6FF;border-radius:12px;padding:14px;border:1px solid #C8DFFF;font-size:13px;line-height:1.7;">
@@ -293,7 +487,7 @@
             <div>① 구글 시트 → <b>확장프로그램 → Apps Script</b></div>
             <div>② 제공된 <b>Apps Script 코드</b> 붙여넣기 후 저장</div>
             <div>③ <b>배포 → 새 배포 → 웹 앱</b> (액세스: 모든 사용자)</div>
-            <div>④ 배포 URL을 위 칸에 입력 후 동기화</div>
+            <div>④ <b>/exec</b>로 끝나는 배포 URL을 위 칸에 입력 후 동기화</div>
             <div>⑤ Apps Script 에디터에서 <b>createFinancialSheet()</b> 함수 실행 → 재무 시트 자동 생성</div>
             <div>⑥ 생성된 <b>재무데이터</b> 시트에 보유 종목 데이터 입력</div>
         </div>
@@ -313,6 +507,7 @@
     <button class="nav-btn active" onclick="switchTab('portfolio',this)"><div class="nav-icon">📊</div><div>자산</div></button>
     <button class="nav-btn" onclick="switchTab('diary',this)"><div class="nav-icon">📝</div><div>일기</div></button>
     <button class="nav-btn" onclick="switchTab('salary',this)"><div class="nav-icon">💸</div><div>플랜</div></button>
+    <button class="nav-btn" onclick="switchTab('market',this)"><div class="nav-icon">📈</div><div>심리</div></button>
     <button class="nav-btn" onclick="switchTab('sync',this)"><div class="nav-icon">⚙️</div><div>설정</div></button>
 </div>
 
@@ -400,11 +595,15 @@ let assets = []; try { const s=localStorage.getItem('my_assets_v10'); if(s) asse
 let diaries = []; try { const s=localStorage.getItem('my_diary_v13'); if(s) diaries=JSON.parse(s); if(!Array.isArray(diaries)) diaries=[]; } catch(e) { diaries=[]; }
 let ratios = []; try { const s=localStorage.getItem('my_invest_ratios'); if(s) ratios=JSON.parse(s); if(!Array.isArray(ratios)||ratios.length===0) ratios=[{name:'일반 투자',ratio:80},{name:'코인 투자',ratio:20}]; } catch(e) { ratios=[{name:'일반 투자',ratio:80},{name:'코인 투자',ratio:20}]; }
 let history = []; try { const s=localStorage.getItem('my_asset_history'); if(s) history=JSON.parse(s); if(!Array.isArray(history)) history=[]; } catch(e) { history=[]; }
+let rebalanceSettings=RebalanceEngine.defaultSettings(); try{const s=localStorage.getItem('my_rebalance_settings');if(s)rebalanceSettings=RebalanceEngine.normalizeSettings(JSON.parse(s));}catch(e){rebalanceSettings=RebalanceEngine.defaultSettings();}
+let rebalanceHistory=[]; try{const s=localStorage.getItem('my_rebalance_history');if(s)rebalanceHistory=JSON.parse(s);if(!Array.isArray(rebalanceHistory))rebalanceHistory=[];}catch(e){rebalanceHistory=[];}
+let latestRebalanceSentiment=null; try{const s=localStorage.getItem('my_rebalance_sentiment');if(s)latestRebalanceSentiment=JSON.parse(s);}catch(e){latestRebalanceSentiment=null;}
+let currentRebalancePlan=null;
 
 // 재무 데이터 캐시 (동기화 시 저장)
 let finCache = {}; try { const s=localStorage.getItem('my_financial_cache'); if(s) finCache=JSON.parse(s); } catch(e) { finCache={}; }
 
-let pieChart=null, histChart=null, finChartInst=null;
+let pieChart=null, histChart=null, finChartInst=null, sentimentChartInst=null;
 let selIdx=-1, rate=1380, chartMode='pie';
 let GOAL=Number(localStorage.getItem('my_goal_v10'))||100000000;
 let DIARY_API=localStorage.getItem('my_diary_api')||'';
@@ -443,12 +642,271 @@ function switchTab(id,btn){
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
     const titles={portfolio:'자산 현황',diary:'투자 일기',salary:'투자 플랜',sync:'설정'};
-    document.getElementById('pageTitle').innerText=titles[id];
+    document.getElementById('pageTitle').innerText=id==='market'?'시장 심리':titles[id];
     document.body.classList.toggle('diary-bg', id==='diary');
     document.getElementById('fabAdd').style.display=id==='portfolio'?'flex':'none';
     if(id==='portfolio') render();
     if(id==='diary'){selDate=null;editId=null;updateDiaryLabel();renderCal();renderDiary();}
     if(id==='salary'){renderRatios();calcPlan();}
+    if(id==='market') loadMarketSentiment();
+}
+
+function sentimentColor(score){
+    if(score<=20) return '#FF3B30';
+    if(score<=40) return '#FF9500';
+    if(score<=60) return '#8E8E93';
+    if(score<=80) return '#34C759';
+    return '#5856D6';
+}
+function fmtPct(v){return v==null?'-':(v*100).toFixed(1)+'%';}
+function fmtScore(v){return v==null?'--':Number(v).toFixed(1);}
+async function loadMarketSentiment(force){
+    const scoreEl=document.getElementById('sentimentScore');
+    if(!scoreEl) return;
+    const input=document.getElementById('fearGreedInput');
+    let fearGreed=Number(input?.value||52);
+    if(!Number.isFinite(fearGreed)) fearGreed=52;
+    fearGreed=Math.max(0,Math.min(100,fearGreed));
+    if(input) input.value=fearGreed;
+    if(force) toast('시장 심리 갱신 중...');
+    try{
+        const res=await fetch('/market-sentiment?fearGreed='+encodeURIComponent(fearGreed));
+        const data=await res.json();
+        if(!res.ok) throw new Error(data.error||'market sentiment failed');
+        renderMarketSentiment(data);
+    }catch(e){
+        document.getElementById('sentimentMeta').innerText='시장 데이터를 불러오지 못했습니다. 서버 실행 상태와 네트워크를 확인해주세요.';
+        document.getElementById('sentimentBacktestBody').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--red);">Load failed</td></tr>';
+        toast('시장 심리 로딩 실패');
+    }
+}
+function renderMarketSentiment(data){
+    const latest=data.latest;
+    const score=latest.marketSentiment;
+    const color=sentimentColor(score);
+    document.getElementById('sentimentScore').innerText=fmtScore(score);
+    document.getElementById('sentimentGauge').style.background='conic-gradient('+color+' '+(score*3.6)+'deg,#E5E5EA 0deg)';
+    const regime=document.getElementById('sentimentRegime');
+    regime.innerText=latest.regime;
+    regime.style.background=color;
+    document.getElementById('sentimentMeta').innerText='기준일 '+latest.date+' · S&P500 '+latest.close.toLocaleString('en-US',{maximumFractionDigits:2})+' · VIX '+latest.vix.toFixed(2);
+    document.getElementById('fgMetric').innerText=fmtScore(latest.fearGreedScore);
+    document.getElementById('vixMetric').innerText=fmtScore(latest.vixScore);
+    document.getElementById('trendMetric').innerText=fmtScore(latest.spTrendScore);
+    latestRebalanceSentiment={
+        assetClass:'stock',score:Number(score),status:latest.regime,
+        calculatedAt:latest.date+'T16:00:00+09:00',fetchedAt:new Date().toISOString(),marketDate:latest.date,version:'stock-v1',
+        components:[
+            {id:'fear-greed',value:Number(latest.fearGreedScore),weight:0.4},
+            {id:'vix',value:Number(latest.vixScore),weight:0.3},
+            {id:'sp500-trend',value:Number(latest.spTrendScore),weight:0.3}
+        ]
+    };
+    localStorage.setItem('my_rebalance_sentiment',JSON.stringify(latestRebalanceSentiment));
+    renderRebalanceSummary();
+    if(document.getElementById('view-rebalance')?.classList.contains('active'))previewRebalance();
+    renderSentimentChart(data.series||[]);
+    renderSentimentBacktest(data.backtest||[]);
+}
+function renderSentimentChart(series){
+    const ctx=document.getElementById('sentimentChart');
+    if(!ctx) return;
+    if(sentimentChartInst){sentimentChartInst.destroy();sentimentChartInst=null;}
+    sentimentChartInst=new Chart(ctx,{
+        type:'line',
+        data:{
+            labels:series.map(r=>r.date.slice(5)),
+            datasets:[{
+                data:series.map(r=>r.marketSentiment),
+                borderColor:'#007AFF',
+                backgroundColor:'rgba(0,122,255,0.08)',
+                borderWidth:2,
+                pointRadius:0,
+                fill:true,
+                tension:0.35
+            }]
+        },
+        options:{
+            maintainAspectRatio:false,
+            plugins:{legend:{display:false},datalabels:{display:false}},
+            scales:{
+                x:{grid:{display:false},ticks:{font:{size:10},maxTicksLimit:6}},
+                y:{min:0,max:100,grid:{color:'#F2F2F7'},ticks:{stepSize:20,font:{size:10}}}
+            }
+        }
+    });
+}
+function renderSentimentBacktest(rows){
+    const body=document.getElementById('sentimentBacktestBody');
+    if(!body) return;
+    body.innerHTML=rows.map(r=>'<tr>'
+        +'<td>'+r.group+'</td>'
+        +'<td>'+r.horizon+'</td>'
+        +'<td>'+r.observations+'</td>'
+        +'<td>'+(r.averageReturn==null?'-':fmtPct(r.averageReturn))+'</td>'
+        +'<td>'+(r.winRate==null?'-':fmtPct(r.winRate))+'</td>'
+        +'</tr>').join('');
+}
+
+// ===== 리밸런싱 =====
+function rebalanceWon(value){return Math.round(Number(value)||0).toLocaleString()+'원';}
+function rebalancePct(value,digits=1){return (Number(value)||0).toFixed(digits)+'%';}
+function rebalancePp(value){const n=Number(value)||0;return (n>0?'+':'')+n.toFixed(1)+'%p';}
+function rebalanceEscape(value){return String(value??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));}
+function rebalanceStatus(row){
+    if(row.needScore>=100)return{label:'매우 높은 필요',bg:'#FFE5E3',color:'#C9342C'};
+    if(row.needScore>=75)return{label:'높은 필요',bg:'#FFF0E0',color:'#C46A00'};
+    if(row.needScore>=50)return{label:'조정 검토',bg:'#FFF8D8',color:'#987300'};
+    return{label:'목표 범위',bg:'#E9F9EE',color:'#248A3D'};
+}
+function rebalanceAssetSummary(){return RebalanceEngine.summarizeAssets(assets,rate);}
+function calculateRebalance(settings){
+    const summary=rebalanceAssetSummary();
+    const plan=RebalanceEngine.calculatePlan({balances:summary.balances,settings,sentiment:latestRebalanceSentiment});
+    if(plan.valid){plan.cashBreakdown=summary.cashBreakdown;plan.missingPrices=summary.missingPrices;}
+    return plan;
+}
+function renderRebalanceSummary(){
+    const el=document.getElementById('rebalanceSummary');if(!el)return;
+    const plan=calculateRebalance(rebalanceSettings);
+    if(!plan.valid){el.innerHTML='<div class="rebalance-title">⚖️ 리밸런싱</div><div class="rebalance-empty">'+rebalanceEscape(plan.errors.join(' '))+'<br>상세 화면에서 목표 비중을 확인해주세요.</div><button class="rebalance-detail-btn" onclick="openRebalance()">설정 확인</button>';return;}
+    const colors={stock:'#007AFF',crypto:'#5856D6',cash:'#34C759'};
+    const rows=RebalanceEngine.KEYS.map(key=>{const row=plan.rows[key];return '<div class="rebalance-mini-row"><strong>'+row.label+'</strong><div class="rebalance-bar"><span style="width:'+Math.min(100,row.currentPct)+'%;background:'+colors[key]+'"></span></div><span>'+rebalancePct(row.currentPct)+' / '+rebalancePct(row.targetPct,0)+'</span></div>';}).join('');
+    const warning=plan.missingPrices.length?'<div class="rebalance-note">가격 연동 필요: '+plan.missingPrices.map(rebalanceEscape).join(', ')+'</div>':'';
+    el.innerHTML='<div class="rebalance-title-row"><div><div class="rebalance-title">⚖️ 리밸런싱 점검</div><div style="font-size:12px;color:var(--sub);margin-top:4px;">'+plan.urgency+' · 현금 중심 조정</div></div><div class="rebalance-score"><strong>'+Math.round(plan.needScore)+'</strong><span>필요도</span></div></div>'+rows+warning+'<button class="rebalance-detail-btn" onclick="openRebalance()">상세 분석 보기</button>';
+}
+function openRebalance(){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-rebalance').classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+    document.getElementById('pageTitle').innerText='리밸런싱';
+    document.getElementById('fabAdd').style.display='none';
+    loadRebalanceInputs();
+    previewRebalance();
+    const sentimentTime=latestRebalanceSentiment?.calculatedAt?new Date(latestRebalanceSentiment.calculatedAt).getTime():0;
+    if(!sentimentTime||Date.now()-sentimentTime>24*60*60*1000)loadMarketSentiment();
+    window.scrollTo({top:0,behavior:'smooth'});
+}
+function closeRebalance(){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-portfolio').classList.add('active');
+    const firstNav=document.querySelector('.nav-btn');if(firstNav)firstNav.classList.add('active');
+    document.getElementById('pageTitle').innerText='자산 현황';
+    document.getElementById('fabAdd').style.display='flex';
+    render();window.scrollTo({top:0,behavior:'smooth'});
+}
+function loadRebalanceInputs(){
+    const s=RebalanceEngine.normalizeSettings(rebalanceSettings);
+    document.getElementById('rebalanceTargetStock').value=s.targets.stock;
+    document.getElementById('rebalanceTargetCrypto').value=s.targets.crypto;
+    document.getElementById('rebalanceTargetCash').value=s.targets.cash;
+    document.getElementById('rebalanceExtraCash').value=s.extraCash?s.extraCash.toLocaleString():'';
+    document.getElementById('rebalanceMaxRate').value=s.maxExecutionRate;
+    document.getElementById('rebalanceSplitCount').value=s.splitCount;
+    document.getElementById('rebalanceSplitMode').value=s.splitMode;
+    document.getElementById('rebalanceSentimentEnabled').checked=s.sentimentEnabled;
+    renderRebalanceSplitSettings(s);
+}
+function renderRebalanceSplitSettings(settings){
+    const s=RebalanceEngine.normalizeSettings(settings),el=document.getElementById('rebalanceSplitSettings');if(!el)return;
+    el.innerHTML=Array.from({length:s.splitCount},(_,i)=>'<div class="rebalance-split-row"><strong>'+(i+1)+'차</strong><input class="rebalance-weight-input" type="number" min="0.1" max="100" step="0.1" value="'+s.splitWeights[i]+'" '+(s.splitMode==='equal'?'disabled':'')+' oninput="previewRebalance()" aria-label="'+(i+1)+'차 금액 비중"><input class="rebalance-buy-input" type="number" min="0" max="100" step="0.1" value="'+s.buyThresholds[i]+'" oninput="previewRebalance()" aria-label="'+(i+1)+'차 매수 심리 기준"><input class="rebalance-sell-input" type="number" min="0" max="100" step="0.1" value="'+s.sellThresholds[i]+'" oninput="previewRebalance()" aria-label="'+(i+1)+'차 매도 심리 기준"></div>').join('');
+    updateRebalanceTotals();
+}
+function readRebalanceDraft(){
+    const count=Math.max(1,Math.min(10,Math.round(raw(document.getElementById('rebalanceSplitCount')?.value)||3)));
+    const mode=document.getElementById('rebalanceSplitMode')?.value==='equal'?'equal':'custom';
+    let weights=Array.from(document.querySelectorAll('.rebalance-weight-input')).slice(0,count).map(el=>Number(el.value));
+    if(mode==='equal')weights=RebalanceEngine.equalWeights(count);
+    return{
+        targets:{stock:Number(document.getElementById('rebalanceTargetStock')?.value),crypto:Number(document.getElementById('rebalanceTargetCrypto')?.value),cash:Number(document.getElementById('rebalanceTargetCash')?.value)},
+        splitCount:count,splitMode:mode,splitWeights:weights,
+        buyThresholds:Array.from(document.querySelectorAll('.rebalance-buy-input')).slice(0,count).map(el=>Number(el.value)),
+        sellThresholds:Array.from(document.querySelectorAll('.rebalance-sell-input')).slice(0,count).map(el=>Number(el.value)),
+        extraCash:raw(document.getElementById('rebalanceExtraCash')?.value),
+        maxExecutionRate:Number(document.getElementById('rebalanceMaxRate')?.value)||100,
+        sentimentEnabled:document.getElementById('rebalanceSentimentEnabled')?.checked!==false
+    };
+}
+function validateRebalanceDraft(draft){
+    const targetSum=Object.values(draft.targets).reduce((sum,v)=>sum+(Number(v)||0),0);
+    const splitSum=draft.splitWeights.reduce((sum,v)=>sum+(Number(v)||0),0);
+    const errors=[];
+    if(Object.values(draft.targets).some(v=>!Number.isFinite(v)||v<0||v>100))errors.push('목표 비중은 0~100%로 입력해주세요.');
+    if(Math.abs(targetSum-100)>0.01)errors.push('목표 비중 합계는 100%여야 합니다.');
+    if(draft.splitWeights.some(v=>!Number.isFinite(v)||v<=0))errors.push('각 분할 비중은 0%보다 커야 합니다.');
+    if(Math.abs(splitSum-100)>0.01)errors.push('분할 비중 합계는 100%여야 합니다.');
+    return{valid:errors.length===0,errors,targetSum,splitSum};
+}
+function updateRebalanceTotals(){
+    const draft=readRebalanceDraft(),validation=validateRebalanceDraft(draft);
+    const targetEl=document.getElementById('rebalanceTargetTotal'),splitEl=document.getElementById('rebalanceSplitTotal');
+    if(targetEl){targetEl.innerText=validation.targetSum.toFixed(1).replace('.0','')+'%';targetEl.style.color=Math.abs(validation.targetSum-100)<.01?'var(--green)':'var(--red)';}
+    if(splitEl){splitEl.innerText=validation.splitSum.toFixed(1).replace('.0','')+'%';splitEl.style.color=Math.abs(validation.splitSum-100)<.01?'var(--green)':'var(--red)';}
+    return{draft,validation};
+}
+function previewRebalance(){
+    const state=updateRebalanceTotals();
+    if(!state.validation.valid){renderRebalanceInvalid(state.validation.errors);return;}
+    const normalized=RebalanceEngine.normalizeSettings(state.draft);
+    const plan=calculateRebalance(normalized);currentRebalancePlan=plan;
+    renderRebalanceDetail(plan);
+}
+function renderRebalanceInvalid(errors){
+    currentRebalancePlan=null;
+    const message='<div class="rebalance-empty" style="color:var(--red);">'+errors.map(rebalanceEscape).join('<br>')+'</div>';
+    ['rebalanceHero','rebalanceAnalysis','rebalancePlan','rebalanceTranches'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=message;});
+}
+function renderRebalanceDetail(plan){
+    if(!plan||!plan.valid){renderRebalanceInvalid(plan?.errors||['계산할 수 없습니다.']);return;}
+    const hero=document.getElementById('rebalanceHero');
+    const sentimentText=plan.sentiment.fresh?'주식 심리 '+plan.sentiment.label+' '+plan.sentiment.score.toFixed(1)+'점':'주식 심리 확인 불가';
+    hero.innerHTML='<div class="rebalance-hero-top"><div><div class="rebalance-hero-score">'+Math.round(plan.needScore)+'</div><div class="rebalance-hero-label">리밸런싱 필요도</div></div><span class="rebalance-pill">'+plan.urgency+'</span></div><div style="margin-top:18px;font-size:12px;color:rgba(255,255,255,.72);">대상 자산 '+rebalanceWon(plan.total)+' · '+sentimentText+'</div>';
+    const analysis=document.getElementById('rebalanceAnalysis');
+    analysis.innerHTML=RebalanceEngine.KEYS.map(key=>{const row=plan.rows[key],status=rebalanceStatus(row),rateText=row.appliedRate<row.baseRate?row.baseRate.toFixed(0)+'% → '+row.appliedRate.toFixed(0)+'%':row.baseRate.toFixed(0)+'%';return '<div class="rebalance-analysis-row"><div class="rebalance-analysis-head"><span class="rebalance-analysis-name">'+row.label+'</span><span class="rebalance-status" style="background:'+status.bg+';color:'+status.color+';">'+status.label+'</span></div><div class="rebalance-analysis-meta"><span>현재<strong>'+rebalancePct(row.currentPct)+'</strong></span><span>목표<strong>'+rebalancePct(row.targetPct)+'</strong></span><span>차이<strong style="color:'+(row.driftPp>0?'var(--red)':row.driftPp<0?'var(--blue)':'var(--main)')+';">'+rebalancePp(row.driftPp)+'</strong></span><span>허용폭<strong>±'+rebalancePct(row.tolerancePp)+'</strong></span><span>이탈 배수<strong>'+row.driftMultiple.toFixed(2)+'배</strong></span><span>조정률<strong>'+rateText+'</strong></span></div></div>';}).join('');
+    const cash=plan.cashBreakdown;
+    const warning=plan.missingPrices.length?'<div class="rebalance-note" style="border-color:#FFB7B2;background:#FFF0EF;color:#B42318;">평가금액을 확인할 수 없는 자산: '+plan.missingPrices.map(rebalanceEscape).join(', ')+'<br>가격을 동기화하기 전에는 계획을 실행하지 마세요.</div>':'';
+    const flows=plan.actions.length?plan.actions.map(action=>'<div class="rebalance-flow"><span>'+action.from+'</span><span class="rebalance-flow-arrow">→</span><strong>'+action.to+' · '+rebalanceWon(action.amount)+'</strong></div>').join(''):'<div class="rebalance-empty">현재는 허용 범위 안입니다.<br>리밸런싱 거래가 필요하지 않습니다.</div>';
+    document.getElementById('rebalancePlan').innerHTML='<div style="font-size:12px;color:var(--sub);line-height:1.65;margin-bottom:10px;">현금 '+rebalanceWon(plan.balances.cash)+' = 원화 '+rebalanceWon(cash.krw)+' + 달러 환산 '+rebalanceWon(cash.usdKrw)+(cash.other?' + 기타 '+rebalanceWon(cash.other):'')+'</div>'+flows+warning+plan.notes.map(note=>'<div class="rebalance-note">'+rebalanceEscape(note)+'</div>').join('');
+    const trancheEl=document.getElementById('rebalanceTranches');
+    if(!plan.actions.length){trancheEl.innerHTML='<div class="rebalance-empty">조정 계획이 생기면 회차별 금액과 심리 조건이 표시됩니다.</div>';}
+    else trancheEl.innerHTML=plan.actions.map(action=>'<div style="margin-bottom:16px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><strong style="font-size:13px;">'+action.from+' → '+action.to+'</strong><span style="font-size:12px;color:var(--blue);font-weight:800;">'+rebalanceWon(action.amount)+'</span></div>'+action.tranches.map(t=>{const usesSentiment=action.key==='stock'&&plan.settings.sentimentEnabled;const condition=usesSentiment?(action.direction==='buy'?'심리 '+t.threshold+' 이하':'심리 '+t.threshold+' 이상'):'심리 조건 없음';const ready=usesSentiment?(t.ready?'<span class="rebalance-ready">검토 가능</span>':'<span class="rebalance-wait">대기</span>'):'<span style="color:var(--sub);font-weight:700;">사용자 판단</span>';return '<div class="rebalance-split-row"><strong>'+t.index+'차</strong><span>'+t.weight+'% · '+rebalanceWon(t.amount)+'</span><span>'+condition+'</span>'+ready+'</div>';}).join('')+'</div>').join('');
+    renderRebalanceHistory();
+}
+function changeRebalanceSplitCount(){
+    const draft=readRebalanceDraft(),count=Math.max(1,Math.min(10,Math.round(raw(document.getElementById('rebalanceSplitCount').value)||3))),thresholds=RebalanceEngine.defaultThresholds(count);
+    draft.splitCount=count;draft.splitWeights=RebalanceEngine.equalWeights(count);draft.buyThresholds=thresholds.buy;draft.sellThresholds=thresholds.sell;
+    renderRebalanceSplitSettings(RebalanceEngine.normalizeSettings(draft));previewRebalance();
+}
+function changeRebalanceSplitMode(){
+    const draft=readRebalanceDraft();draft.splitMode=document.getElementById('rebalanceSplitMode').value;
+    if(draft.splitMode==='equal')draft.splitWeights=RebalanceEngine.equalWeights(draft.splitCount);
+    renderRebalanceSplitSettings(RebalanceEngine.normalizeSettings(draft));previewRebalance();
+}
+function resetRebalanceTargets(){
+    document.getElementById('rebalanceTargetStock').value=70;document.getElementById('rebalanceTargetCrypto').value=10;document.getElementById('rebalanceTargetCash').value=20;previewRebalance();
+}
+function saveRebalanceSettings(){
+    const state=updateRebalanceTotals();if(!state.validation.valid)return toast(state.validation.errors[0]);
+    rebalanceSettings=RebalanceEngine.normalizeSettings(state.draft);
+    localStorage.setItem('my_rebalance_settings',JSON.stringify(rebalanceSettings));
+    saveToFirestore();renderRebalanceSummary();toast('✅ 리밸런싱 설정을 저장했습니다.');
+}
+function recordRebalance(status){
+    if(!currentRebalancePlan||!currentRebalancePlan.valid)return toast('먼저 올바른 설정으로 계산해주세요.');
+    if(currentRebalancePlan.missingPrices?.length)return toast('가격 연동이 필요한 자산을 먼저 확인해주세요.');
+    const labels={planned:'계획 저장',held:'보류',completed:'실행 완료'};
+    rebalanceHistory.unshift({id:Date.now(),status,label:labels[status]||status,createdAt:new Date().toISOString(),needScore:Math.round(currentRebalancePlan.needScore),total:currentRebalancePlan.total,settings:currentRebalancePlan.settings,actions:currentRebalancePlan.actions.map(a=>({key:a.key,direction:a.direction,from:a.from,to:a.to,amount:a.amount}))});
+    rebalanceHistory=rebalanceHistory.slice(0,30);
+    rebalanceSettings={...currentRebalancePlan.settings};
+    if(status==='completed')rebalanceSettings.extraCash=0;
+    localStorage.setItem('my_rebalance_settings',JSON.stringify(rebalanceSettings));localStorage.setItem('my_rebalance_history',JSON.stringify(rebalanceHistory));
+    if(status==='completed'){loadRebalanceInputs();previewRebalance();}
+    saveToFirestore();renderRebalanceHistory();renderRebalanceSummary();toast('기록을 저장했습니다.');
+}
+function renderRebalanceHistory(){
+    const el=document.getElementById('rebalanceHistory');if(!el)return;
+    if(!rebalanceHistory.length){el.innerHTML='<div class="rebalance-empty">아직 저장된 리밸런싱 기록이 없습니다.</div>';return;}
+    el.innerHTML=rebalanceHistory.slice(0,8).map(item=>{const date=new Date(item.createdAt);const actionText=item.actions?.length?item.actions.map(a=>a.from+'→'+a.to+' '+rebalanceWon(a.amount)).join(' · '):'거래 없음';return '<div class="rebalance-history-row"><div><strong>'+rebalanceEscape(item.label)+'</strong><div style="color:var(--sub);margin-top:4px;line-height:1.45;">'+rebalanceEscape(actionText)+'</div></div><div style="text-align:right;white-space:nowrap;"><strong>'+Math.round(item.needScore)+'점</strong><div style="color:var(--sub);margin-top:4px;">'+date.toLocaleDateString('ko-KR')+'</div></div></div>';}).join('');
 }
 
 // ===== 차트 모드 =====
@@ -594,6 +1052,7 @@ function render(){
             }
         }catch(e){}
     }
+    renderRebalanceSummary();
 }
 
 // ===== 재무 분석 모달 =====
@@ -741,12 +1200,19 @@ function closeFin(e){if(e.target===document.getElementById('finModal'))closeFinM
 // ===== 동기화 (재무 데이터 포함) =====
 async function syncData(){
     const url=document.getElementById('csvUrl').value.trim();
-    if(!url)return toast('URL을 입력해주세요.');
+    if(location.protocol==='file:'){
+        toast('❌ start-portfolio.cmd로 앱을 실행해주세요.');
+        return;
+    }
+    const button=document.getElementById('sheetSyncButton');
+    if(button?.disabled)return;
+    if(button){button.disabled=true;button.innerText='연결 중...';button.style.opacity='0.65';}
     toast('⏳ 동기화 중...');
-    localStorage.setItem('my_csv_url_v10',url);
     try{
-        const res=await fetch(url);if(!res.ok)throw new Error();
+        const endpoint=url?'/sheet-sync?url='+encodeURIComponent(url):'/sheet-sync';
+        const res=await fetch(endpoint);
         const obj=await res.json();
+        if(!res.ok)throw new Error(obj.detail||obj.error||'동기화 요청 실패');
         const get=k=>obj[k.toUpperCase()]!==undefined?obj[k.toUpperCase()]:null;
 
         // 환율
@@ -773,7 +1239,14 @@ async function syncData(){
         }
 
         saveAssets();
-    }catch(e){toast('❌ 실패: URL을 확인해주세요.');}
+    }catch(e){
+        console.error('[sheet-sync] failed',e);
+        const serverUnavailable=/Failed to fetch|Unexpected token|NetworkError/i.test(e.message||'');
+        const message=serverUnavailable?'앱 서버가 꺼져 있습니다. start-portfolio.cmd로 실행해주세요.':(e.message||'동기화에 실패했습니다.');
+        toast('❌ '+message);
+    }finally{
+        if(button){button.disabled=false;button.innerText='동기화';button.style.opacity='1';}
+    }
 }
 
 // ===== 자산 CRUD =====
@@ -1203,12 +1676,12 @@ const firebaseConfig = {
   messagingSenderId: "676495324429",
   appId: "1:676495324429:web:da72dbb7b06794cac82c44"
 };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+let auth = null;
+let db = null;
 let currentUser = null;
 
 async function handleLogin(){
+  if(!auth){ toast('Firebase 연결을 확인해주세요.'); return; }
   if(currentUser){
     if(confirm('로그아웃 할까요?')) await auth.signOut();
   } else {
@@ -1219,18 +1692,19 @@ async function handleLogin(){
 }
 
 async function saveToFirestore(){
-  if(!currentUser) return;
+  if(!currentUser||!db) return;
   try {
     const ts = Date.now();
     localStorage.setItem('my_last_modified', ts);
     await db.collection('users').doc(currentUser.uid).set({
-      assets, diaries, memos, memoTabs, goal: GOAL, ratios, history, lastModified: ts
+      assets, diaries, memos, memoTabs, goal: GOAL, ratios, history,
+      rebalanceSettings, rebalanceHistory, latestRebalanceSentiment, lastModified: ts
     });
   } catch(e) { console.error('Firestore 저장 실패', e); }
 }
 
 async function loadFromFirestore(){
-  if(!currentUser) return;
+  if(!currentUser||!db) return;
   let loaded = false;
   try {
     const doc = await db.collection('users').doc(currentUser.uid).get();
@@ -1247,39 +1721,66 @@ async function loadFromFirestore(){
         if(d.goal){ GOAL=d.goal; localStorage.setItem('my_goal_v10',GOAL); }
         if(Array.isArray(d.ratios)&&d.ratios.length){ ratios=d.ratios; localStorage.setItem('my_invest_ratios',JSON.stringify(ratios)); }
         if(Array.isArray(d.history)){ history=d.history; localStorage.setItem('my_asset_history',JSON.stringify(history)); }
+        if(d.rebalanceSettings){ rebalanceSettings=RebalanceEngine.normalizeSettings(d.rebalanceSettings); localStorage.setItem('my_rebalance_settings',JSON.stringify(rebalanceSettings)); }
+        if(Array.isArray(d.rebalanceHistory)){ rebalanceHistory=d.rebalanceHistory; localStorage.setItem('my_rebalance_history',JSON.stringify(rebalanceHistory)); }
+        if(d.latestRebalanceSentiment){ latestRebalanceSentiment=d.latestRebalanceSentiment; localStorage.setItem('my_rebalance_sentiment',JSON.stringify(latestRebalanceSentiment)); }
         localStorage.setItem('my_last_modified', cloudTs);
       } else {
         // 로컬이 최신 → Firestore에 업로드
-        saveToFirestore();
+        await saveToFirestore();
       }
       loaded = true;
     } else {
-      saveToFirestore();
+      await saveToFirestore();
     }
   } catch(e) { console.error('Firestore 로드 실패', e); toast('동기화 실패'); return; }
   if(loaded){ render(); renderCal(); renderDiary(); renderRatios(); calcPlan(); toast('☁️ 동기화 완료'); }
 }
 
-auth.onAuthStateChanged(user => {
-  currentUser = user;
-  const btn = document.getElementById('loginBtn');
-  if(!btn) return;
-  if(user){
-    const name = user.displayName ? user.displayName.split(' ')[0] : '사용자';
-    btn.innerHTML = user.photoURL
-      ? `<img src="${user.photoURL}" style="width:20px;height:20px;border-radius:50%;">${name}`
-      : name;
-    loadFromFirestore();
-  } else {
-    btn.innerHTML = '로그인';
+function initializeFirebaseAndSync(){
+  const btn=document.getElementById('loginBtn');
+  if(typeof firebase==='undefined'){
+    console.error('[firebase] SDK를 불러오지 못했습니다. 로컬 모드로 계속합니다.');
+    if(btn){btn.innerHTML='로그인 불가';btn.title='Firebase SDK 로딩 실패';}
+    syncData();
+    return;
   }
-});
+
+  try{
+    if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+    auth=firebase.auth();
+    db=firebase.firestore();
+    auth.onAuthStateChanged(async user=>{
+      currentUser=user;
+      if(user){
+        const name=user.displayName?user.displayName.split(' ')[0]:'사용자';
+        if(btn)btn.innerHTML=user.photoURL
+          ? `<img src="${user.photoURL}" style="width:20px;height:20px;border-radius:50%;">${name}`
+          : name;
+        await loadFromFirestore();
+      }else if(btn){
+        btn.innerHTML='로그인';
+      }
+
+      // Firebase 데이터가 먼저 정리된 뒤 최신 시트 가격을 반영한다.
+      await syncData();
+    },error=>{
+      console.error('[firebase] 인증 상태 확인 실패',error);
+      if(btn){btn.innerHTML='로그인 불가';btn.title='Firebase 인증 연결 실패';}
+      syncData();
+    });
+  }catch(error){
+    console.error('[firebase] 초기화 실패',error);
+    if(btn){btn.innerHTML='로그인 불가';btn.title='Firebase 초기화 실패';}
+    syncData();
+  }
+}
 
 // ===== 초기화 =====
 window.onload=()=>{
-    const u=localStorage.getItem('my_csv_url_v10');if(u){document.getElementById('csvUrl').value=u;syncData();}
     if(DIARY_API)document.getElementById('diaryApiUrl').value=DIARY_API;
     render();renderCal();renderDiary();renderRatios();calcPlan();
+    initializeFirebaseAndSync();
 };
 </script>
 </body>

@@ -1,3 +1,9 @@
 node_modules/
 .env
 *.log
+.sheet-sync-url
+__pycache__/
+dist/
+.openai/
+market_sentiment_output.csv
+market_sentiment_score.png
