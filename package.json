@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node rebalance.test.js"
+    "test": "node rebalance.test.js && node market-sentiment-core.test.js && node scripts/check-inline-scripts.js",
+    "update:market-sentiment": "node scripts/update-market-sentiment.js"
   },
   "keywords": [],
   "author": "",

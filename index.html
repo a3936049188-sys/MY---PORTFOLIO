@@ -10,6 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <script src="./rebalance.js"></script>
+    <script src="./market-sentiment-core.js"></script>
     <style>
         :root {
             --bg: #F2F2F7; --card: #FFFFFF; --main: #000000; --sub: #8E8E93;
@@ -670,12 +671,27 @@ async function loadMarketSentiment(force){
     if(input) input.value=fearGreed;
     if(force) toast('시장 심리 갱신 중...');
     try{
-        const res=await fetch('/market-sentiment?fearGreed='+encodeURIComponent(fearGreed));
-        const data=await res.json();
-        if(!res.ok) throw new Error(data.error||'market sentiment failed');
+        let data;
+        const isLocalServer=location.hostname==='localhost'||location.hostname==='127.0.0.1';
+        if(isLocalServer){
+            try{
+                const res=await fetch('/market-sentiment?fearGreed='+encodeURIComponent(fearGreed));
+                data=await res.json();
+                if(!res.ok) throw new Error(data.error||'market sentiment failed');
+            }catch(e){
+                data=null;
+            }
+        }
+        if(!data){
+            const url=new URL('./market-sentiment-data.json',document.baseURI);
+            if(force) url.searchParams.set('refresh',Date.now());
+            const res=await fetch(url,{cache:'no-cache'});
+            if(!res.ok) throw new Error('market sentiment snapshot failed');
+            data=MarketSentimentCore.applyFearGreed(await res.json(),fearGreed);
+        }
         renderMarketSentiment(data);
     }catch(e){
-        document.getElementById('sentimentMeta').innerText='시장 데이터를 불러오지 못했습니다. 서버 실행 상태와 네트워크를 확인해주세요.';
+        document.getElementById('sentimentMeta').innerText='시장 데이터를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
         document.getElementById('sentimentBacktestBody').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--red);">Load failed</td></tr>';
         toast('시장 심리 로딩 실패');
     }
